@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- Treat CS0219 (variable assigned but never used) as an error project-wide -->
+    <WarningsAsErrors>$(WarningsAsErrors);CS0219</WarningsAsErrors>
+  </PropertyGroup>
+</Project>
