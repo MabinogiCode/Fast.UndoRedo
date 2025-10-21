@@ -143,6 +143,21 @@
             Verifies that batched add/remove sequences are recorded properly.
             </summary>
         </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.DummyCollection">
+            <summary>
+            Simple test collection that exposes NotifyCollectionChanged events.
+            </summary>
+        </member>
+        <member name="E:Fast.UndoRedo.Core.Tests.DummyCollection.CollectionChanged">
+            <summary>
+            Occurs when the collection changes.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.DummyCollection.RaiseReset">
+            <summary>
+            Raise a Reset collection changed event.
+            </summary>
+        </member>
         <member name="T:Fast.UndoRedo.Core.Tests.DummyNotify">
             <summary>
             A simple class that implements INotifyPropertyChanging and INotifyPropertyChanged for testing.
@@ -238,6 +253,26 @@
             Gets or sets the name and raises change notifications.
             </summary>
         </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.DynamicDataAdapterTests">
+            <summary>
+            Tests for the DynamicData adapter helper.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.DynamicDataAdapterTests.RegisterCollection_Null_DoesNotThrow">
+            <summary>
+            Verify that registering a null collection does not throw.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.DynamicDataAdapterTests.RegisterCollection_AttachesCollection">
+            <summary>
+            Verify that registering a collection attaches and does not throw when events are raised.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.DynamicDataAdapterTests.Constructor_NullService_Throws">
+            <summary>
+            Constructor should throw when service is null.
+            </summary>
+        </member>
         <member name="T:Fast.UndoRedo.Core.Tests.IntegrationTests">
             <summary>
             Integration tests that exercise end-to-end attach/change/undo-redo scenarios.
@@ -246,6 +281,21 @@
         <member name="M:Fast.UndoRedo.Core.Tests.IntegrationTests.EndToEndAttachChangeUndoRedoVerifyState">
             <summary>
             Full end-to-end scenario: attach view model and collection, perform changes and verify undo/redo restores state.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.LoggingTests">
+            <summary>
+            Tests for the core logging implementations.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.LoggingTests.DebugCoreLogger_Log_DoesNotThrow">
+            <summary>
+            Ensures that calling Log does not throw an exception.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.LoggingTests.DebugCoreLogger_LogException_DoesNotThrow">
+            <summary>
+            Ensures that calling LogException does not throw an exception.
             </summary>
         </member>
         <member name="T:Fast.UndoRedo.Core.Tests.MemoryLeakTests">
