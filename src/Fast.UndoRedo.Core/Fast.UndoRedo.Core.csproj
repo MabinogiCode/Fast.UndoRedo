@@ -3,6 +3,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <RootNamespace>Fast.UndoRedo.Core</RootNamespace>
+    <AssemblyName>Fast.UndoRedo.Core</AssemblyName>
     <WarningsAsErrors>IDE0011;IDE0052;CS0219</WarningsAsErrors>
     <Authors>MabinogiCode</Authors>
     <Company>MabinogiCode</Company>
@@ -14,6 +15,7 @@
     <PackageTags>undo;redo;mvvm;reactiveui;dotnet;netstandard;collection;propertychanged</PackageTags>
     <PackageReleaseNotes>See GitHub for changelog and roadmap.</PackageReleaseNotes>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DocumentationFile>$(AssemblyName).xml</DocumentationFile>
     <PackageIcon>mabinogi-icon.png</PackageIcon>
   </PropertyGroup>
   <ItemGroup>

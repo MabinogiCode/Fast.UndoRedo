@@ -3,9 +3,10 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <RootNamespace>Fast.UndoRedo.Mvvm</RootNamespace>
+    <AssemblyName>Fast.UndoRedo.Mvvm</AssemblyName>
     <WarningsAsErrors>IDE0011;CS0219</WarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <IncludeXmlDocumentation>true</IncludeXmlDocumentation>
+    <DocumentationFile>$(AssemblyName).xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Fast.UndoRedo.Core\Fast.UndoRedo.Core.csproj" />

@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
+    <AssemblyName>Fast.UndoRedo.Core.Tests</AssemblyName>
     <IsPackable>false</IsPackable>
     <WarningsAsErrors>IDE0011;CS0219</WarningsAsErrors>
   </PropertyGroup>
