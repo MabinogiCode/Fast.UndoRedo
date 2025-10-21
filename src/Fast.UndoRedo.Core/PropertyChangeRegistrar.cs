@@ -151,30 +151,5 @@ namespace Fast.UndoRedo.Core
 
             return new CompositeDisposable(disposables);
         }
-
-        private sealed class CompositeDisposable : IDisposable
-        {
-            private readonly List<IDisposable> _list;
-
-            public CompositeDisposable(List<IDisposable> list)
-            {
-                _list = list ?? new List<IDisposable>();
-            }
-
-            public void Dispose()
-            {
-                foreach (var d in _list)
-                {
-                    try
-                    {
-                        d.Dispose();
-                    }
-                    catch
-                    {
-                        // ignore dispose exceptions
-                    }
-                }
-            }
-        }
     }
 }

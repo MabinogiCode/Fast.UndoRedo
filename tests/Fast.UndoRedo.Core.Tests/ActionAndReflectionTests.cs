@@ -10,18 +10,11 @@ namespace Fast.UndoRedo.Core.Tests
     /// </summary>
     public class ActionAndReflectionTests
     {
-        private class Person
-        {
-            public string Name { get; set; }
-            public string ReadOnly { get; } = "ro";
-            public string PrivateSet { get; private set; } = "priv";
-        }
-
         /// <summary>
         /// Verifies that a setter delegate can be created and applied to set a property value.
         /// </summary>
         [Fact]
-        public void ReflectionHelpers_CreateSetter_AllowsSettingValue()
+        public void ReflectionHelpersCreateSetterAllowsSettingValue()
         {
             var p = new Person { Name = "old" };
             var prop = typeof(Person).GetProperty(nameof(Person.Name));
@@ -39,7 +32,7 @@ namespace Fast.UndoRedo.Core.Tests
         /// Verifies that read-only properties yield a null setter.
         /// </summary>
         [Fact]
-        public void ReflectionHelpers_CreateSetter_NullForReadOnly()
+        public void ReflectionHelpersCreateSetterNullForReadOnly()
         {
             var prop = typeof(Person).GetProperty(nameof(Person.ReadOnly));
             var setterObj = ReflectionHelpers.CreateSetter(typeof(Person), prop);
@@ -50,7 +43,7 @@ namespace Fast.UndoRedo.Core.Tests
         /// Verifies that private setters can be accessed via reflection helper.
         /// </summary>
         [Fact]
-        public void ReflectionHelpers_CreateSetter_PrivateSetter_Works()
+        public void ReflectionHelpersCreateSetterPrivateSetterWorks()
         {
             var p = new Person();
             var prop = typeof(Person).GetProperty(nameof(Person.PrivateSet));
@@ -61,6 +54,7 @@ namespace Fast.UndoRedo.Core.Tests
             Assert.NotNull(setter);
 
             setter(p, "changed");
+
             // private setter should have changed value
             var v = prop.GetValue(p) as string;
             Assert.Equal("changed", v);
@@ -70,7 +64,7 @@ namespace Fast.UndoRedo.Core.Tests
         /// Ensures PropertyChangeAction applies Undo/Redo values correctly.
         /// </summary>
         [Fact]
-        public void PropertyChangeAction_UndoRedo_AppliesValues()
+        public void PropertyChangeActionUndoRedoAppliesValues()
         {
             var p = new Person { Name = "old" };
             Action<Person, string> setter = (t, v) => t.Name = v;
@@ -89,7 +83,7 @@ namespace Fast.UndoRedo.Core.Tests
         /// Validates constructor argument checks for PropertyChangeAction.
         /// </summary>
         [Fact]
-        public void PropertyChangeAction_Constructor_ValidatesArgs()
+        public void PropertyChangeActionConstructorValidatesArgs()
         {
             Action<Person, string> setter = (t, v) => t.Name = v;
             Assert.Throws<ArgumentNullException>(() => new PropertyChangeAction<Person, string>(null, setter, "old", "new"));
@@ -100,7 +94,7 @@ namespace Fast.UndoRedo.Core.Tests
         /// Ensures ActionFactory creates a working property-change action from reflection-based setter.
         /// </summary>
         [Fact]
-        public void ActionFactory_CreatesPropertyAction_AndApplies()
+        public void ActionFactoryCreatesPropertyActionAndApplies()
         {
             var p = new Person { Name = "initial" };
             var prop = typeof(Person).GetProperty(nameof(Person.Name));

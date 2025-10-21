@@ -20,7 +20,7 @@ namespace Fast.UndoRedo.Core
         // tracker for Attach/Detach of objects
         private readonly RegistrationTracker _tracker;
 
-        // explicit collection subscriptions created via AttachCollection
+        // Centralized store for all collection subscriptions to prevent duplicates.
         private readonly Dictionary<INotifyCollectionChanged, IDisposable> _collectionSubscriptions = new Dictionary<INotifyCollectionChanged, IDisposable>();
         private bool _isApplying;
 
@@ -235,28 +235,7 @@ namespace Fast.UndoRedo.Core
         /// <param name="collection">The collection to attach.</param>
         public void AttachCollection(INotifyCollectionChanged collection)
         {
-            if (collection == null)
-            {
-                return;
-            }
-
-            lock (_sync)
-            {
-                if (_collectionSubscriptions.ContainsKey(collection))
-                {
-                    return;
-                }
-
-                try
-                {
-                    var sub = new CollectionSubscription(collection, this, null);
-                    _collectionSubscriptions[collection] = sub;
-                }
-                catch
-                {
-                    // ignore subscription creation errors
-                }
-            }
+            AttachCollectionInternal(collection, null);
         }
 
         /// <summary>
@@ -314,6 +293,40 @@ namespace Fast.UndoRedo.Core
             });
 
             return new UndoRedoServiceUnsubscriber(_observers, observer, _sync);
+        }
+
+        /// <summary>
+        /// Centralized method to attach a collection and prevent duplicate subscriptions.
+        /// </summary>
+        /// <param name="collectionInstance">The collection instance to attach.</param>
+        /// <param name="snapshots">The dictionary of snapshots, used by the registration tracker.</param>
+        /// <returns>A disposable subscription, or null if already subscribed or failed.</returns>
+        internal IDisposable AttachCollectionInternal(object collectionInstance, Dictionary<object, List<object>> snapshots)
+        {
+            if (collectionInstance is not INotifyCollectionChanged incc)
+            {
+                return null;
+            }
+
+            lock (_sync)
+            {
+                if (_collectionSubscriptions.ContainsKey(incc))
+                {
+                    return null;
+                }
+
+                try
+                {
+                    var sub = new CollectionSubscription(incc, this, snapshots, Logger);
+                    _collectionSubscriptions[incc] = sub;
+                    return sub;
+                }
+                catch (Exception ex)
+                {
+                    Logger?.LogException(ex);
+                    return null;
+                }
+            }
         }
 
         private void ExecuteAction(Action action)

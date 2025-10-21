@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections.ObjectModel;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using Fast.UndoRedo.Core;
 using Xunit;
@@ -16,7 +16,7 @@ namespace Fast.UndoRedo.Core.Tests
         /// Verifies that CreateCollectionChangeAction produces an Add action that modifies the collection.
         /// </summary>
         [Fact]
-        public void Factory_CreatesAddAction()
+        public void FactoryCreatesAddAction()
         {
             var coll = new ObservableCollection<string>();
             var action = ActionFactory.CreateCollectionChangeAction(coll, typeof(string), CollectionChangeType.Add, "a", null, 0, -1, null, "add", null);
@@ -34,7 +34,7 @@ namespace Fast.UndoRedo.Core.Tests
         /// Verifies Remove action behaviour.
         /// </summary>
         [Fact]
-        public void Factory_CreatesRemoveAction()
+        public void FactoryCreatesRemoveAction()
         {
             var coll = new ObservableCollection<string> { "a", "b" };
             var action = ActionFactory.CreateCollectionChangeAction(coll, typeof(string), CollectionChangeType.Remove, "a", null, 0, -1, null, "remove", null);
@@ -53,7 +53,7 @@ namespace Fast.UndoRedo.Core.Tests
         /// Verifies replace/move/clear composite scenarios.
         /// </summary>
         [Fact]
-        public void Factory_CreatesReplace_Move_Clear()
+        public void FactoryCreatesReplaceMoveClear()
         {
             var coll = new ObservableCollection<string> { "a", "b", "c" };
             var replace = ActionFactory.CreateCollectionChangeAction(coll, typeof(string), CollectionChangeType.Replace, "x", "b", 1, -1, null, "replace", null);

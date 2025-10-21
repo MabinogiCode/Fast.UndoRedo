@@ -1,10 +1,10 @@
-﻿using System;
-using System.Reactive.Subjects;
+﻿using Fast.UndoRedo.Core;
+using Fast.UndoRedo.ReactiveUI;
+using System;
 using System.ComponentModel;
+using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
-using Fast.UndoRedo.Core;
-using Fast.UndoRedo.ReactiveUI;
 using Xunit;
 
 namespace Fast.UndoRedo.Core.Tests
@@ -14,37 +14,11 @@ namespace Fast.UndoRedo.Core.Tests
     /// </summary>
     public class ReactiveAdapterTests
     {
-        private class DummyReactive : INotifyPropertyChanged, INotifyPropertyChanging
-        {
-            private string _name;
-            public event PropertyChangedEventHandler PropertyChanged;
-            public event PropertyChangingEventHandler PropertyChanging;
-
-            public IObservable<object> Changing => _changing;
-            public IObservable<object> Changed => _changed;
-
-            private readonly Subject<object> _changing = new Subject<object>();
-            private readonly Subject<object> _changed = new Subject<object>();
-
-            public string Name
-            {
-                get => _name;
-                set
-                {
-                    PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(nameof(Name)));
-                    _changing.OnNext(new { PropertyName = nameof(Name) });
-                    _name = value;
-                    _changed.OnNext(new { PropertyName = nameof(Name) });
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name)));
-                }
-            }
-        }
-
         /// <summary>
         /// Verifies that ReactiveAdapter records changes when observables are used.
         /// </summary>
         [Fact]
-        public void ReactiveAdapter_RecordsPropertyChanges_FromObservables()
+        public void ReactiveAdapterRecordsPropertyChangesFromObservables()
         {
             var service = new UndoRedoService();
             var adapter = new ReactiveAdapter(service);
@@ -60,12 +34,13 @@ namespace Fast.UndoRedo.Core.Tests
         /// Verifies that ReactiveAdapter falls back to INotifyPropertyChanged path when observables are not subscribed.
         /// </summary>
         [Fact]
-        public void ReactiveAdapter_Fallback_INotifyPropertyChanged()
+        public void ReactiveAdapterFallbackINotifyPropertyChanged()
         {
             var service = new UndoRedoService();
             var adapter = new ReactiveAdapter(service);
 
             var d = new DummyReactive();
+
             // trigger only the INotifyPropertyChanged path
             d.Name = "x";
             adapter.Register(d);
@@ -78,7 +53,7 @@ namespace Fast.UndoRedo.Core.Tests
         /// Ensures Unregister allows garbage collection of reactive objects.
         /// </summary>
         [Fact]
-        public void Unregister_AllowsGarbageCollection_ForReactiveObject()
+        public void UnregisterAllowsGarbageCollectionForReactiveObject()
         {
             var svc = new UndoRedoService();
             var adapter = new ReactiveAdapter(svc);
@@ -107,7 +82,7 @@ namespace Fast.UndoRedo.Core.Tests
         /// Validates concurrent register/unregister operations do not throw or corrupt state.
         /// </summary>
         [Fact]
-        public void Concurrent_RegisterUnregister_DoesNotThrowOrCorruptState()
+        public void ConcurrentRegisterUnregisterDoesNotThrowOrCorruptState()
         {
             var svc = new UndoRedoService();
             var adapter = new ReactiveAdapter(svc);
@@ -124,6 +99,7 @@ namespace Fast.UndoRedo.Core.Tests
                     {
                         var obj = new DummyReactive();
                         adapter.Register(obj);
+
                         // optionally mutate
                         obj.Name = "v" + j;
                         adapter.Unregister(obj);

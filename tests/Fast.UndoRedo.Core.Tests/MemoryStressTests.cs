@@ -16,7 +16,7 @@ namespace Fast.UndoRedo.Core.Tests
         /// Long running stress test that verifies many register/unregister cycles do not leak memory. Skipped by default.
         /// </summary>
         [Fact(Skip = "Long running stress test, enable manually when needed")]
-        public void RegisterUnregister_LargeLoop_DoesNotLeak()
+        public void RegisterUnregisterLargeLoopDoesNotLeak()
         {
             var svc = new UndoRedoService();
             var tracker = new RegistrationTracker(svc);
@@ -42,19 +42,15 @@ namespace Fast.UndoRedo.Core.Tests
             int alive = 0;
             foreach (var wr in weakRefs)
             {
-                if (wr.IsAlive) alive++;
+                if (wr.IsAlive)
+                {
+                    alive++;
+                }
             }
 
             // we allow a small number to be alive due to finalizer timing; expect vast majority collected
             var ratio = (double)alive / iterations;
             Assert.True(ratio < 0.01, $"Too many objects still alive after GC: {alive}/{iterations}");
-        }
-
-        private class DummyNotify : INotifyPropertyChanged
-        {
-            public event PropertyChangedEventHandler PropertyChanged;
-            private string _name;
-            public string Name { get => _name; set { _name = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name))); } }
         }
     }
 }

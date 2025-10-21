@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using Fast.UndoRedo.Core.Logging;
 
 namespace Fast.UndoRedo.Core
@@ -11,8 +10,7 @@ namespace Fast.UndoRedo.Core
     internal static class CollectionRegistrar
     {
         /// <summary>
-        /// Registers a collection instance with the UndoRedoService by creating a CollectionSubscription.
-        /// Returns an IDisposable that will unsubscribe the subscription when disposed.
+        /// Registers a collection instance with the UndoRedoService by delegating to the service's internal attachment method.
         /// </summary>
         /// <param name="collectionInstance">The collection instance to register for undo/redo tracking.</param>
         /// <param name="service">The UndoRedoService instance.</param>
@@ -26,21 +24,8 @@ namespace Fast.UndoRedo.Core
                 return null;
             }
 
-            if (collectionInstance is INotifyCollectionChanged)
-            {
-                try
-                {
-                    var sub = new CollectionSubscription(collectionInstance, service, snapshots, logger);
-                    return sub;
-                }
-                catch (Exception ex)
-                {
-                    logger?.LogException(ex);
-                    return null;
-                }
-            }
-
-            return null;
+            // Delegate to the centralized subscription logic in UndoRedoService
+            return service.AttachCollectionInternal(collectionInstance, snapshots);
         }
     }
 }

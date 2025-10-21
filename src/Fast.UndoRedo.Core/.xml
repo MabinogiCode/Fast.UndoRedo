@@ -136,8 +136,7 @@
         </member>
         <member name="M:Fast.UndoRedo.Core.CollectionRegistrar.RegisterCollection(System.Object,Fast.UndoRedo.Core.UndoRedoService,System.Collections.Generic.Dictionary{System.Object,System.Collections.Generic.List{System.Object}},Fast.UndoRedo.Core.Logging.ICoreLogger)">
             <summary>
-            Registers a collection instance with the UndoRedoService by creating a CollectionSubscription.
-            Returns an IDisposable that will unsubscribe the subscription when disposed.
+            Registers a collection instance with the UndoRedoService by delegating to the service's internal attachment method.
             </summary>
             <param name="collectionInstance">The collection instance to register for undo/redo tracking.</param>
             <param name="service">The UndoRedoService instance.</param>
@@ -184,6 +183,22 @@
             </summary>
             <param name="sender">The event sender.</param>
             <param name="e">The event arguments.</param>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.CompositeDisposable">
+            <summary>
+            Represents a group of disposable resources that are disposed together.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.CompositeDisposable.#ctor(System.Collections.Generic.List{System.IDisposable})">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fast.UndoRedo.Core.CompositeDisposable"/> class.
+            </summary>
+            <param name="list">The list of disposables to manage.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.CompositeDisposable.Dispose">
+            <summary>
+            Disposes all disposables in the group.
+            </summary>
         </member>
         <member name="T:Fast.UndoRedo.Core.CoreObserverWrapper`1">
             <summary>
@@ -366,10 +381,6 @@
         <member name="T:Fast.UndoRedo.Core.RegistrationTracker">
             <summary>
             Tracks registrations of objects for change notifications and collection subscriptions.
-            Registers property change and collection change handlers and caches values for undo/redo.
-            Improvements applied to follow best practices:
-            - use ConditionalWeakTable for registrations and value cache to avoid keeping strong references to tracked objects (prevents memory leaks)
-            - tighten null checks and reduce repeated dictionary-style indexing.
             </summary>
         </member>
         <member name="M:Fast.UndoRedo.Core.RegistrationTracker.#ctor(Fast.UndoRedo.Core.UndoRedoService)">
@@ -380,7 +391,7 @@
         </member>
         <member name="M:Fast.UndoRedo.Core.RegistrationTracker.#ctor(Fast.UndoRedo.Core.UndoRedoService,Fast.UndoRedo.Core.Logging.ICoreLogger)">
             <summary>
-            Initializes a new instance of the <see cref="T:Fast.UndoRedo.Core.RegistrationTracker"/> class with a logger.
+            Initializes a new instance of the <see cref="T:Fast.UndoRedo.Core.RegistrationTracker"/> class.
             </summary>
             <param name="service">Service used to push undoable actions.</param>
             <param name="logger">Logger for error reporting.</param>
@@ -388,9 +399,8 @@
         <member name="M:Fast.UndoRedo.Core.RegistrationTracker.Register(System.Object)">
             <summary>
             Register an object for property and collection change tracking.
-            The tracker subscribes to change events and caches values required to create undo actions.
             </summary>
-            <param name="obj">Object to register (may implement INotifyPropertyChanged/IObservableCollection, etc.).</param>
+            <param name="obj">Object to register.</param>
         </member>
         <member name="M:Fast.UndoRedo.Core.RegistrationTracker.Unregister(System.Object)">
             <summary>
@@ -500,6 +510,14 @@
             </summary>
             <param name="observer">Observer that receives state updates.</param>
             <returns>A disposable handle to unsubscribe.</returns>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.UndoRedoService.AttachCollectionInternal(System.Object,System.Collections.Generic.Dictionary{System.Object,System.Collections.Generic.List{System.Object}})">
+            <summary>
+            Centralized method to attach a collection and prevent duplicate subscriptions.
+            </summary>
+            <param name="collectionInstance">The collection instance to attach.</param>
+            <param name="snapshots">The dictionary of snapshots, used by the registration tracker.</param>
+            <returns>A disposable subscription, or null if already subscribed or failed.</returns>
         </member>
         <member name="T:Fast.UndoRedo.Core.UndoRedoServiceUnsubscriber">
             <summary>

@@ -14,7 +14,7 @@ namespace Fast.UndoRedo.Core.Tests
         /// Verifies Add then Remove undo/redo behavior.
         /// </summary>
         [Fact]
-        public void Add_Remove_UndoRedo_Works()
+        public void AddRemoveUndoRedoWorks()
         {
             var coll = new ObservableCollection<string>();
             var action = new CollectionChangeAction<string>(coll, CollectionChangeType.Add, "a", 0, description: "add a");
@@ -31,7 +31,7 @@ namespace Fast.UndoRedo.Core.Tests
         /// Verifies Remove undo/redo.
         /// </summary>
         [Fact]
-        public void Remove_UndoRedo_Works()
+        public void RemoveUndoRedoWorks()
         {
             var coll = new ObservableCollection<string> { "a", "b" };
             var action = new CollectionChangeAction<string>(coll, CollectionChangeType.Remove, "a", 0, description: "remove a");
@@ -49,7 +49,7 @@ namespace Fast.UndoRedo.Core.Tests
         /// Verifies Replace undo/redo.
         /// </summary>
         [Fact]
-        public void Replace_UndoRedo_Works()
+        public void ReplaceUndoRedoWorks()
         {
             var coll = new ObservableCollection<string> { "a", "b" };
             var action = new CollectionChangeAction<string>(coll, CollectionChangeType.Replace, "x", 1, oldItem: "b", description: "replace");
@@ -65,7 +65,7 @@ namespace Fast.UndoRedo.Core.Tests
         /// Verifies Move undo/redo.
         /// </summary>
         [Fact]
-        public void Move_UndoRedo_Works()
+        public void MoveUndoRedoWorks()
         {
             var coll = new ObservableCollection<string> { "a", "b", "c" };
             var action = new CollectionChangeAction<string>(coll, CollectionChangeType.Move, "b", 1, toIndex: 2, description: "move");
@@ -81,7 +81,7 @@ namespace Fast.UndoRedo.Core.Tests
         /// Verifies Clear undo/redo behavior.
         /// </summary>
         [Fact]
-        public void Clear_UndoRedo_Works()
+        public void ClearUndoRedoWorks()
         {
             var coll = new ObservableCollection<string> { "a", "b" };
             var cleared = coll.ToList();

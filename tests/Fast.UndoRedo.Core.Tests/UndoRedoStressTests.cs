@@ -17,7 +17,7 @@ namespace Fast.UndoRedo.Core.Tests
         /// Multi-threaded stress test for undo/redo operations.
         /// </summary>
         [Fact(Skip = "Long running stress test, enable manually when needed")]
-        public void UndoRedo_MultiThreaded_StressTest()
+        public void UndoRedoMultiThreadedStressTest()
         {
             var svc = new UndoRedoService();
             var obj = new DummyNotify();
@@ -44,22 +44,20 @@ namespace Fast.UndoRedo.Core.Tests
                 {
                     Interlocked.Increment(ref errors);
                 }
+
                 if (Interlocked.Decrement(ref remaining) == 0)
+                {
                     done.Set();
+                }
             }
 
             for (int t = 0; t < threads; t++)
+            {
                 ThreadPool.QueueUserWorkItem(_ => Worker());
+            }
 
             Assert.True(done.WaitOne(TimeSpan.FromSeconds(10)), "Threads should complete");
             Assert.Equal(0, errors);
-        }
-
-        private class DummyNotify : INotifyPropertyChanged
-        {
-            public event PropertyChangedEventHandler PropertyChanged;
-            private string _name;
-            public string Name { get => _name; set { _name = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name))); } }
         }
     }
 }

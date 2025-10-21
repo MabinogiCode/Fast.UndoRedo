@@ -15,7 +15,7 @@ namespace Fast.UndoRedo.Core.Tests
         /// Full end-to-end scenario: attach view model and collection, perform changes and verify undo/redo restores state.
         /// </summary>
         [Fact]
-        public void EndToEnd_Attach_Change_UndoRedo_VerifyState()
+        public void EndToEndAttachChangeUndoRedoVerifyState()
         {
             var svc = new UndoRedoService();
             var vm = new PersonViewModel();
@@ -44,18 +44,6 @@ namespace Fast.UndoRedo.Core.Tests
             Assert.Equal(2, vm.Items.Count);
             svc.Redo(); // Redo name to "Bob"
             Assert.Equal("Bob", vm.Name);
-        }
-
-        private class PersonViewModel : INotifyPropertyChanged
-        {
-            public event PropertyChangedEventHandler PropertyChanged;
-            private string _name = string.Empty;
-            public string Name
-            {
-                get => _name;
-                set { _name = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name))); }
-            }
-            public ObservableCollection<string> Items { get; } = new ObservableCollection<string>();
         }
     }
 }
