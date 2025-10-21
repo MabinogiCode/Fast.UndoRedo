@@ -15,10 +15,12 @@
     <PackageReleaseNotes>See GitHub for changelog and roadmap.</PackageReleaseNotes>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IncludeXmlDocumentation>true</IncludeXmlDocumentation>
+    <PackageIcon>mabinogi-icon.png</PackageIcon>
   </PropertyGroup>
   <ItemGroup>
     <None Include="nuget-readme.md" Pack="true" PackagePath="" />
-    <None Include="Fast.UndoRedo.Core.xml" Pack="true" PackagePath="" />
+    <!-- Include project-local icon file in package root so NuGet can use it as package icon -->
+    <None Include="mabinogi-icon.png" Pack="true" PackagePath="" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0">
