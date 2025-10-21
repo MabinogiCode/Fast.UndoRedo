@@ -16,7 +16,8 @@ namespace Fast.UndoRedo.Core.Tests
         public void DebugCoreLoggerLogDoesNotThrow()
         {
             var logger = new DebugCoreLogger();
-            logger.Log("test message");
+            var ex = Record.Exception(() => logger.Log("test message"));
+            Assert.Null(ex);
         }
 
         /// <summary>
@@ -26,7 +27,8 @@ namespace Fast.UndoRedo.Core.Tests
         public void DebugCoreLoggerLogExceptionDoesNotThrow()
         {
             var logger = new DebugCoreLogger();
-            logger.LogException(new InvalidOperationException("boom"));
+            var ex = Record.Exception(() => logger.LogException(new InvalidOperationException("boom")));
+            Assert.Null(ex);
         }
     }
 }

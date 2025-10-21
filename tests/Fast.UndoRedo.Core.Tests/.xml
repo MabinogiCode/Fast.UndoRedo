@@ -288,12 +288,12 @@
             Tests for the core logging implementations.
             </summary>
         </member>
-        <member name="M:Fast.UndoRedo.Core.Tests.LoggingTests.DebugCoreLogger_Log_DoesNotThrow">
+        <member name="M:Fast.UndoRedo.Core.Tests.LoggingTests.DebugCoreLoggerLogDoesNotThrow">
             <summary>
             Ensures that calling Log does not throw an exception.
             </summary>
         </member>
-        <member name="M:Fast.UndoRedo.Core.Tests.LoggingTests.DebugCoreLogger_LogException_DoesNotThrow">
+        <member name="M:Fast.UndoRedo.Core.Tests.LoggingTests.DebugCoreLoggerLogExceptionDoesNotThrow">
             <summary>
             Ensures that calling LogException does not throw an exception.
             </summary>
