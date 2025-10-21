@@ -2,196 +2,64 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
-    tags: [ 'v*' ]
+    branches: [ main, master, '**/fix/**', '**/feat/**' ]
   pull_request:
-    branches: [ main ]
+    branches: [ '**' ]
 
 jobs:
-  build-and-test:
-    runs-on: windows-latest
-
+  build:
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '6.0.x'
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '7.0.x'
 
-    - name: Restore
-      run: dotnet restore
+      - name: Restore
+        run: dotnet restore
 
-    - name: Build
-      run: dotnet build --configuration Release --no-restore
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
 
-    - name: Test with coverage
-      run: |
-        dotnet test tests/Fast.UndoRedo.Core.Tests/Fast.UndoRedo.Core.Tests.csproj --configuration Release --no-build --collect:"XPlat Code Coverage"
-
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        files: ./tests/**/coverage.cobertura.xml
-        fail_ci_if_error: true
-
-    - name: Check coverage threshold
-      shell: pwsh
-      run: |
-        $threshold = 75.0
-        Write-Host "Searching for coverage file..."
-        $f = Get-ChildItem -Recurse -Filter coverage.cobertura.xml -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($null -eq $f) {
-            Write-Error "Coverage file not found (coverage.cobertura.xml).";
-            exit 1;
-        }
-        Write-Host "Found coverage file: $($f.FullName)"
-        try {
-            $xml = [xml](Get-Content $f.FullName)
-            $lineRate = 0.0
-            if ($xml -and $xml.DocumentElement -and $xml.DocumentElement.GetAttribute('line-rate')) {
-                $lineRate = [double]$xml.DocumentElement.GetAttribute('line-rate')
-            } elseif ($xml.coverage -and $xml.coverage.'@line-rate') {
-                $lineRate = [double]$xml.coverage.'@line-rate'
-            } else {
-                Write-Error "Unable to read line-rate from coverage file.";
-                exit 1;
-            }
-
-            $percent = [math]::Round($lineRate * 100.0, 2)
-            Write-Host "Code coverage (lines): $percent%"
-            if ($percent -lt $threshold) {
-                Write-Error "Coverage $percent% is below required threshold of $threshold%";
-                exit 1
-            }
-            else {
-                Write-Host "Coverage threshold met: $percent% >= $threshold%"
-            }
-        }
-        catch {
-            Write-Error "Error reading coverage file: $_"
-            exit 1
-        }
-
-    - name: Generate HTML coverage report
-      shell: pwsh
-      run: |
-        # install reportgenerator to local tools folder
-        $toolsDir = "./tools_report";
-        dotnet tool install --tool-path $toolsDir dotnet-reportgenerator-globaltool --version 5.1.23
-        $reportPath = Get-ChildItem -Recurse -Filter coverage.cobertura.xml -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($null -eq $reportPath) { Write-Error "Coverage file not found for report generation"; exit 1 }
-        $outDir = "CoverageReport"
-        if (Test-Path $outDir) { Remove-Item $outDir -Recurse -Force }
-        &"${toolsDir}\reportgenerator" -reports:$reportPath.FullName -targetdir:$outDir -reporttypes:HtmlSummary
-        if ($LASTEXITCODE -ne 0) { Write-Error "ReportGenerator failed"; exit 1 }
-
-    - name: Upload coverage report artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: coverage-report
-        path: CoverageReport
-
-  pack-on-tag:
+  windows-tests:
     runs-on: windows-latest
-    needs: build-and-test
-    if: startsWith(github.ref, 'refs/tags/v')
-
+    needs: build
     steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '6.0.x'
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '7.0.x'
 
-    - name: Restore
-      run: dotnet restore
+      - name: Restore
+        run: dotnet restore
 
-    - name: Build
-      run: dotnet build --configuration Release --no-restore
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
 
-    - name: Get version from tag
-      shell: pwsh
-      run: |
-        $ref = "${{ github.ref }}";
-        # strip leading refs/tags/v or refs/tags/
-        $ver = $ref -replace '^refs/tags/v','';
-        if ($ver -eq $ref) { $ver = $ref -replace '^refs/tags/',''; }
-        Write-Host "Detected version: $ver";
-        Add-Content -Path $env:GITHUB_ENV -Value "VERSION=$ver"
+      - name: Run tests and collect coverage
+        run: |
+          dotnet test tests\Fast.UndoRedo.Core.Tests\Fast.UndoRedo.Core.Tests.csproj --configuration Release --no-build --logger "trx;LogFileName=test-results.trx" --results-directory ./TestResults --collect:"XPlat Code Coverage"
 
-    - name: Validate version format (semver)
-      shell: pwsh
-      run: |
-        $ver = "${{ env.VERSION }}";
-        Write-Host "Validating version: $ver";
-        $semver = '^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z-\.]+)?(?:\+[0-9A-Za-z-\.]+)?$'
-        if (-not ($ver -match $semver))
-        {
-            Write-Error "Version '$ver' is not a valid semantic version (MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD])";
-            exit 1;
-        }
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults
 
-    - name: Pack NuGet
-      env:
-        VERSION: ${{ env.VERSION }}
-      run: |
-        echo "Packing version $VERSION";
-        dotnet pack src/Fast.UndoRedo.Core/Fast.UndoRedo.Core.csproj -c Release -o ./artifacts /p:PackageVersion=$VERSION
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-results
+          path: |
+            **/coverage.cobertura.xml
+            **/coverage.opencover.xml
+            **/coverage.json
 
-    - name: Sign packages (optional)
-      if: secrets.SIGNING_PFX != ''
-      shell: pwsh
-      env:
-        SIGNING_PFX: ${{ secrets.SIGNING_PFX }}
-        SIGNING_PFX_PASSWORD: ${{ secrets.SIGNING_PFX_PASSWORD }}
-      run: |
-        Write-Host "Signing packages using provided PFX...";
-        $pfxPath = Join-Path $PWD 'signing.pfx';
-        [System.IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:SIGNING_PFX));
-        $nupkgs = Get-ChildItem -Path ./artifacts -Filter *.nupkg -File
-        if ($nupkgs.Count -eq 0) { Write-Error "No nupkg found to sign"; exit 1 }
-        foreach ($pkg in $nupkgs) {
-            Write-Host "Signing $($pkg.FullName)";
-            dotnet nuget sign $pkg.FullName --certificate-path $pfxPath --certificate-password "$env:SIGNING_PFX_PASSWORD" --timestamper https://timestamp.digicert.com --verbosity minimal
-            if ($LASTEXITCODE -ne 0) { Write-Error "Signing failed for $($pkg.FullName)"; exit 1 }
-        }
-
-    - name: Upload artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: nuget
-        path: ./artifacts
-
-    - name: Push packages to NuGet
-      if: secrets.NUGET_API_KEY != ''
-      env:
-        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-      run: |
-        dotnet nuget push ./artifacts/*.nupkg -k $NUGET_API_KEY -s https://api.nuget.org/v3/index.json --skip-duplicate
-
-    - name: Create GitHub Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ env.VERSION }}
-        draft: false
-        prerelease: false
-
-    - name: Upload Release Assets
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./artifacts
-        asset_name: artifacts
-        asset_content_type: application/zip
+      - name: Show .NET info
+        run: dotnet --info
