@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Fast.UndoRedo.Core.Logging;
 
 namespace Fast.UndoRedo.ReactiveUI
@@ -16,8 +17,12 @@ namespace Fast.UndoRedo.ReactiveUI
     {
         private readonly UndoRedoService service;
         private readonly ICoreLogger logger;
-        private readonly Dictionary<object, List<IDisposable>> registrations = new Dictionary<object, List<IDisposable>>();
-        private readonly Dictionary<object, Dictionary<string, object>> valueCache = new Dictionary<object, Dictionary<string, object>>();
+
+        // Use ConditionalWeakTable to avoid keeping strong references to registered objects
+        private readonly ConditionalWeakTable<object, List<IDisposable>> _registrations = new ConditionalWeakTable<object, List<IDisposable>>();
+        private readonly ConditionalWeakTable<object, Dictionary<string, object>> _valueCache = new ConditionalWeakTable<object, Dictionary<string, object>>();
+
+        private readonly object _sync = new object();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ReactiveAdapter"/>.
@@ -45,17 +50,18 @@ namespace Fast.UndoRedo.ReactiveUI
                 return;
             }
 
-            if (this.registrations.ContainsKey(reactiveObject))
+            lock (_sync)
             {
-                return;
+                if (_registrations.TryGetValue(reactiveObject, out _))
+                {
+                    return;
+                }
             }
 
             var disposables = new List<IDisposable>();
-            this.registrations[reactiveObject] = disposables;
 
             // prepare value cache
             var propCache = new Dictionary<string, object>();
-            this.valueCache[reactiveObject] = propCache;
 
             // initialize cache for public properties
             foreach (var p in reactiveObject.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
@@ -73,6 +79,28 @@ namespace Fast.UndoRedo.ReactiveUI
                 {
                     this.logger.LogException(ex);
                     propCache[p.Name] = null;
+                }
+            }
+
+            try
+            {
+                _valueCache.Add(reactiveObject, propCache);
+            }
+            catch
+            {
+                // if already present, ignore
+            }
+
+            try
+            {
+                _registrations.Add(reactiveObject, disposables);
+            }
+            catch
+            {
+                // already registered concurrently
+                if (!_registrations.TryGetValue(reactiveObject, out _))
+                {
+                    throw;
                 }
             }
 
@@ -122,12 +150,21 @@ namespace Fast.UndoRedo.ReactiveUI
 
                     try
                     {
-                        this.valueCache[s][e.PropertyName] = prop.GetValue(s);
+                        if (!_valueCache.TryGetValue(s, out var cache))
+                        {
+                            cache = new Dictionary<string, object>();
+                            _valueCache.Add(s, cache);
+                        }
+
+                        cache[e.PropertyName] = prop.GetValue(s);
                     }
                     catch (Exception ex)
                     {
                         this.logger.LogException(ex);
-                        this.valueCache[s][e.PropertyName] = null;
+                        if (_valueCache.TryGetValue(s, out var cache2))
+                        {
+                            cache2[e.PropertyName] = null;
+                        }
                     }
                 };
 
@@ -151,7 +188,7 @@ namespace Fast.UndoRedo.ReactiveUI
                     }
 
                     object oldVal = null;
-                    if (this.valueCache.TryGetValue(s, out var cache) && cache.TryGetValue(e.PropertyName, out var o))
+                    if (_valueCache.TryGetValue(s, out var cache) && cache.TryGetValue(e.PropertyName, out var o))
                     {
                         oldVal = o;
                     }
@@ -179,9 +216,19 @@ namespace Fast.UndoRedo.ReactiveUI
                         this.service.Push(action);
                     }
 
-                    if (this.valueCache.TryGetValue(s, out var cache2))
+                    try
                     {
+                        if (!_valueCache.TryGetValue(s, out var cache2))
+                        {
+                            cache2 = new Dictionary<string, object>();
+                            _valueCache.Add(s, cache2);
+                        }
+
                         cache2[e.PropertyName] = newVal;
+                    }
+                    catch (Exception ex)
+                    {
+                        this.logger.LogException(ex);
                     }
                 };
 
@@ -189,7 +236,7 @@ namespace Fast.UndoRedo.ReactiveUI
                 disposables.Add(new CoreUnsubscriber(() => ipc.PropertyChanged -= pc));
             }
 
-            this.registrations[reactiveObject] = disposables;
+            // final assign already added above
         }
 
         /// <summary>
@@ -203,7 +250,7 @@ namespace Fast.UndoRedo.ReactiveUI
                 return;
             }
 
-            if (this.registrations.TryGetValue(reactiveObject, out var list))
+            if (_registrations.TryGetValue(reactiveObject, out var list))
             {
                 foreach (var d in list)
                 {
@@ -217,12 +264,16 @@ namespace Fast.UndoRedo.ReactiveUI
                     }
                 }
 
-                this.registrations.Remove(reactiveObject);
+                _registrations.Remove(reactiveObject);
             }
 
-            if (this.valueCache.ContainsKey(reactiveObject))
+            try
             {
-                this.valueCache.Remove(reactiveObject);
+                _valueCache.Remove(reactiveObject);
+            }
+            catch
+            {
+                // ignore
             }
         }
 
@@ -252,12 +303,21 @@ namespace Fast.UndoRedo.ReactiveUI
 
             try
             {
-                this.valueCache[sender][propName] = prop.GetValue(sender);
+                if (!_valueCache.TryGetValue(sender, out var cache))
+                {
+                    cache = new Dictionary<string, object>();
+                    _valueCache.Add(sender, cache);
+                }
+
+                cache[propName] = prop.GetValue(sender);
             }
             catch (Exception ex)
             {
                 this.logger.LogException(ex);
-                this.valueCache[sender][propName] = null;
+                if (_valueCache.TryGetValue(sender, out var cache2))
+                {
+                    cache2[propName] = null;
+                }
             }
         }
 
@@ -286,7 +346,7 @@ namespace Fast.UndoRedo.ReactiveUI
             }
 
             object oldVal = null;
-            if (this.valueCache.TryGetValue(sender, out var cache) && cache.TryGetValue(propName, out var o))
+            if (_valueCache.TryGetValue(sender, out var cache) && cache.TryGetValue(propName, out var o))
             {
                 oldVal = o;
             }
@@ -314,9 +374,19 @@ namespace Fast.UndoRedo.ReactiveUI
                 this.service.Push(action);
             }
 
-            if (this.valueCache.TryGetValue(sender, out var cache2))
+            try
             {
+                if (!_valueCache.TryGetValue(sender, out var cache2))
+                {
+                    cache2 = new Dictionary<string, object>();
+                    _valueCache.Add(sender, cache2);
+                }
+
                 cache2[propName] = newVal;
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogException(ex);
             }
         }
 

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Reactive.Subjects;
 using System.ComponentModel;
+using System.Threading;
+using System.Threading.Tasks;
 using Fast.UndoRedo.Core;
 using Fast.UndoRedo.ReactiveUI;
 using Xunit;
@@ -9,10 +11,11 @@ namespace Fast.UndoRedo.Core.Tests
 {
     public class ReactiveAdapterTests
     {
-        private class DummyReactive : INotifyPropertyChanged
+        private class DummyReactive : INotifyPropertyChanged, INotifyPropertyChanging
         {
             private string _name;
             public event PropertyChangedEventHandler PropertyChanged;
+            public event PropertyChangingEventHandler PropertyChanging;
 
             public IObservable<object> Changing => _changing;
             public IObservable<object> Changed => _changed;
@@ -25,6 +28,7 @@ namespace Fast.UndoRedo.Core.Tests
                 get => _name;
                 set
                 {
+                    PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(nameof(Name)));
                     _changing.OnNext(new { PropertyName = nameof(Name) });
                     _name = value;
                     _changed.OnNext(new { PropertyName = nameof(Name) });
@@ -59,6 +63,64 @@ namespace Fast.UndoRedo.Core.Tests
             d.Name = "y";
 
             Assert.True(service.CanUndo);
+        }
+
+        [Fact]
+        public void Unregister_AllowsGarbageCollection_ForReactiveObject()
+        {
+            var svc = new UndoRedoService();
+            var adapter = new ReactiveAdapter(svc);
+
+            WeakReference wr = CreateAndRegister(adapter);
+
+            // Force GC
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            Assert.False(wr.IsAlive, "Reactive object should be collectible after Unregister and GC");
+        }
+
+        private WeakReference CreateAndRegister(ReactiveAdapter adapter)
+        {
+            var obj = new DummyReactive();
+            adapter.Register(obj);
+            adapter.Unregister(obj);
+            var wr = new WeakReference(obj);
+            obj = null;
+            return wr;
+        }
+
+        [Fact]
+        public void Concurrent_RegisterUnregister_DoesNotThrowOrCorruptState()
+        {
+            var svc = new UndoRedoService();
+            var adapter = new ReactiveAdapter(svc);
+
+            const int tasks = 16;
+            const int iterations = 100;
+            var exceptions = 0;
+
+            Parallel.For(0, tasks, i =>
+            {
+                try
+                {
+                    for (int j = 0; j < iterations; j++)
+                    {
+                        var obj = new DummyReactive();
+                        adapter.Register(obj);
+                        // optionally mutate
+                        obj.Name = "v" + j;
+                        adapter.Unregister(obj);
+                    }
+                }
+                catch
+                {
+                    Interlocked.Increment(ref exceptions);
+                }
+            });
+
+            Assert.Equal(0, exceptions);
         }
     }
 }
