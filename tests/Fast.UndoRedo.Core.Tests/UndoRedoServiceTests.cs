@@ -4,10 +4,16 @@ using Xunit;
 
 namespace Fast.UndoRedo.Core.Tests
 {
+    /// <summary>
+    /// Tests for UndoRedoService basic push/undo/redo and collection attachment behaviors.
+    /// </summary>
     public class UndoRedoServiceTests
     {
+        /// <summary>
+        /// Basic push/undo/redo functionality for a simple action.
+        /// </summary>
         [Fact]
-        public void PushUndoRedo_WorksForSimpleAction()
+        public void PushUndoRedoWorksForSimpleAction()
         {
             var service = new UndoRedoService();
             var called = false;
@@ -28,8 +34,11 @@ namespace Fast.UndoRedo.Core.Tests
             Assert.True(service.CanUndo);
         }
 
+        /// <summary>
+        /// Verifies that attaching a collection records add/remove operations.
+        /// </summary>
         [Fact]
-        public void AttachCollection_RecordsAddRemove()
+        public void AttachCollectionRecordsAddRemove()
         {
             var service = new UndoRedoService();
             var coll = new ObservableCollection<string>();
@@ -41,23 +50,5 @@ namespace Fast.UndoRedo.Core.Tests
             service.Undo();
             Assert.False(service.CanUndo);
         }
-    }
-
-    internal class TestAction : IUndoableAction
-    {
-        private readonly System.Action _undo;
-        private readonly System.Action _redo;
-
-        public string Description { get; }
-
-        public TestAction(System.Action undo, System.Action redo, string desc)
-        {
-            _undo = undo;
-            _redo = redo;
-            Description = desc;
-        }
-
-        public void Undo() => _undo();
-        public void Redo() => _redo();
     }
 }

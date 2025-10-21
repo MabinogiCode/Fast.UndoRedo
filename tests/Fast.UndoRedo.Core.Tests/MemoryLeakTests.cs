@@ -6,10 +6,16 @@ using Xunit;
 
 namespace Fast.UndoRedo.Core.Tests
 {
+    /// <summary>
+    /// Tests ensuring tracked objects are unregistered correctly and can be garbage-collected.
+    /// </summary>
     public class MemoryLeakTests
     {
+        /// <summary>
+        /// Verifies that registering and then unregistering an object allows it to be collected by the GC.
+        /// </summary>
         [Fact]
-        public void Register_Unregister_AllowsGarbageCollection_ForTrackedObject()
+        public void RegisterUnregisterAllowsGarbageCollectionForTrackedObject()
         {
             var svc = new UndoRedoService();
             var tracker = new RegistrationTracker(svc);
@@ -31,13 +37,17 @@ namespace Fast.UndoRedo.Core.Tests
             tracker.Register(obj);
             tracker.Unregister(obj);
             var wr = new WeakReference(obj);
+
             // drop strong reference
             obj = null;
             return wr;
         }
 
+        /// <summary>
+        /// Verifies there are no race conditions when registering/unregistering from multiple threads and taking collection snapshots.
+        /// </summary>
         [Fact]
-        public void Register_MultipleThreads_NoRaceOnCollectionSnapshots()
+        public void RegisterMultipleThreadsNoRaceOnCollectionSnapshots()
         {
             var svc = new UndoRedoService();
             var tracker = new RegistrationTracker(svc);
@@ -50,6 +60,7 @@ namespace Fast.UndoRedo.Core.Tests
             {
                 var local = new ObservableHolder();
                 tracker.Register(local);
+
                 // mutate collection to exercise snapshot logic
                 local.Items.Add("x");
                 tracker.Unregister(local);
@@ -68,19 +79,6 @@ namespace Fast.UndoRedo.Core.Tests
             bool signaled = done.WaitOne(TimeSpan.FromSeconds(5));
             Assert.True(signaled, "Threads should complete within timeout");
             Assert.Equal(0, remaining);
-        }
-
-        private class DummyNotify : INotifyPropertyChanged
-        {
-            public event PropertyChangedEventHandler PropertyChanged;
-            private string _name;
-            public string Name { get => _name; set { _name = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name))); } }
-        }
-
-        private class ObservableHolder : INotifyPropertyChanged
-        {
-            public event PropertyChangedEventHandler PropertyChanged;
-            public System.Collections.ObjectModel.ObservableCollection<string> Items { get; } = new System.Collections.ObjectModel.ObservableCollection<string>();
         }
     }
 }

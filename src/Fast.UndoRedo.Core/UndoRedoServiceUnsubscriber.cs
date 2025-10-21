@@ -12,6 +12,12 @@ namespace Fast.UndoRedo.Core
         private readonly IObserver<UndoRedoState> _observer;
         private readonly object _sync;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UndoRedoServiceUnsubscriber"/> class.
+        /// </summary>
+        /// <param name="observers">The list of observers.</param>
+        /// <param name="observer">The observer to remove on dispose.</param>
+        /// <param name="sync">The synchronization object.</param>
         public UndoRedoServiceUnsubscriber(List<IObserver<UndoRedoState>> observers, IObserver<UndoRedoState> observer, object sync)
         {
             _observers = observers;
@@ -19,6 +25,9 @@ namespace Fast.UndoRedo.Core
             _sync = sync;
         }
 
+        /// <summary>
+        /// Disposes the instance and removes the observer from the list.
+        /// </summary>
         public void Dispose()
         {
             lock (_sync)

@@ -1,10 +1,10 @@
 ﻿using Fast.UndoRedo.Core;
+using Fast.UndoRedo.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Reflection;
-using Fast.UndoRedo.Core.Logging;
+using System.Runtime.CompilerServices;
 
 namespace Fast.UndoRedo.ReactiveUI
 {
@@ -14,13 +14,18 @@ namespace Fast.UndoRedo.ReactiveUI
     /// </summary>
     public class ReactiveAdapter
     {
+        // instance fields
         private readonly UndoRedoService service;
         private readonly ICoreLogger logger;
-        private readonly Dictionary<object, List<IDisposable>> registrations = new Dictionary<object, List<IDisposable>>();
-        private readonly Dictionary<object, Dictionary<string, object>> valueCache = new Dictionary<object, Dictionary<string, object>>();
+
+        // Use ConditionalWeakTable to avoid keeping strong references to registered objects
+        private readonly ConditionalWeakTable<object, List<IDisposable>> _registrations = new();
+        private readonly ConditionalWeakTable<object, Dictionary<string, object>> _valueCache = new();
+
+        private readonly object _sync = new();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ReactiveAdapter"/>.
+        /// Initializes a new instance of the <see cref="ReactiveAdapter"/> class.
         /// </summary>
         /// <param name="service">The undo/redo service used to push recorded actions.</param>
         public ReactiveAdapter(UndoRedoService service)
@@ -28,6 +33,11 @@ namespace Fast.UndoRedo.ReactiveUI
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ReactiveAdapter"/> class with an optional logger.
+        /// </summary>
+        /// <param name="service">The undo/redo service used to push recorded actions.</param>
+        /// <param name="logger">Optional logger used by the adapter for diagnostics.</param>
         public ReactiveAdapter(UndoRedoService service, ICoreLogger logger)
         {
             this.service = service ?? throw new ArgumentNullException(nameof(service));
@@ -45,17 +55,18 @@ namespace Fast.UndoRedo.ReactiveUI
                 return;
             }
 
-            if (this.registrations.ContainsKey(reactiveObject))
+            lock (_sync)
             {
-                return;
+                if (_registrations.TryGetValue(reactiveObject, out _))
+                {
+                    return;
+                }
             }
 
             var disposables = new List<IDisposable>();
-            this.registrations[reactiveObject] = disposables;
 
             // prepare value cache
             var propCache = new Dictionary<string, object>();
-            this.valueCache[reactiveObject] = propCache;
 
             // initialize cache for public properties
             foreach (var p in reactiveObject.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
@@ -76,15 +87,37 @@ namespace Fast.UndoRedo.ReactiveUI
                 }
             }
 
+            try
+            {
+                _valueCache.Add(reactiveObject, propCache);
+            }
+            catch
+            {
+                // if already present, ignore
+            }
+
+            try
+            {
+                _registrations.Add(reactiveObject, disposables);
+            }
+            catch
+            {
+                // already registered concurrently
+                if (!_registrations.TryGetValue(reactiveObject, out _))
+                {
+                    throw;
+                }
+            }
+
             // Try to find ReactiveUI observables named "Changing" and "Changed"
-            object changingObs = GetMemberValue(reactiveObject, "Changing");
-            object changedObs = GetMemberValue(reactiveObject, "Changed");
+            object changingObs = ReactiveAdapterHelpers.GetMemberValue(reactiveObject, "Changing");
+            object changedObs = ReactiveAdapterHelpers.GetMemberValue(reactiveObject, "Changed");
 
             if (changingObs != null)
             {
                 try
                 {
-                    SubscribeObservable(changingObs, evt => this.OnChanging(reactiveObject, evt), disposables);
+                    ReactiveAdapterHelpers.SubscribeObservable(changingObs, evt => this.OnChanging(reactiveObject, evt), disposables, this.logger);
                 }
                 catch (Exception ex)
                 {
@@ -96,7 +129,7 @@ namespace Fast.UndoRedo.ReactiveUI
             {
                 try
                 {
-                    SubscribeObservable(changedObs, evt => this.OnChanged(reactiveObject, evt), disposables);
+                    ReactiveAdapterHelpers.SubscribeObservable(changedObs, evt => this.OnChanged(reactiveObject, evt), disposables, this.logger);
                 }
                 catch (Exception ex)
                 {
@@ -122,12 +155,21 @@ namespace Fast.UndoRedo.ReactiveUI
 
                     try
                     {
-                        this.valueCache[s][e.PropertyName] = prop.GetValue(s);
+                        if (!_valueCache.TryGetValue(s, out var cache))
+                        {
+                            cache = new Dictionary<string, object>();
+                            _valueCache.Add(s, cache);
+                        }
+
+                        cache[e.PropertyName] = prop.GetValue(s);
                     }
                     catch (Exception ex)
                     {
                         this.logger.LogException(ex);
-                        this.valueCache[s][e.PropertyName] = null;
+                        if (_valueCache.TryGetValue(s, out var cache2))
+                        {
+                            cache2[e.PropertyName] = null;
+                        }
                     }
                 };
 
@@ -151,7 +193,7 @@ namespace Fast.UndoRedo.ReactiveUI
                     }
 
                     object oldVal = null;
-                    if (this.valueCache.TryGetValue(s, out var cache) && cache.TryGetValue(e.PropertyName, out var o))
+                    if (_valueCache.TryGetValue(s, out var cache) && cache.TryGetValue(e.PropertyName, out var o))
                     {
                         oldVal = o;
                     }
@@ -173,15 +215,25 @@ namespace Fast.UndoRedo.ReactiveUI
                         return;
                     }
 
-                    var action = ActionFactory.CreatePropertyChangeAction(s, prop, setter, oldVal, newVal, (string)$"{s.GetType().Name}.{prop.Name} changed", this.logger);
+                    var action = ActionFactory.CreatePropertyChangeAction(s, prop, setter, oldVal, newVal, $"{s.GetType().Name}.{prop.Name} changed", this.logger);
                     if (action != null)
                     {
                         this.service.Push(action);
                     }
 
-                    if (this.valueCache.TryGetValue(s, out var cache2))
+                    try
                     {
+                        if (!_valueCache.TryGetValue(s, out var cache2))
+                        {
+                            cache2 = new Dictionary<string, object>();
+                            _valueCache.Add(s, cache2);
+                        }
+
                         cache2[e.PropertyName] = newVal;
+                    }
+                    catch (Exception ex)
+                    {
+                        this.logger.LogException(ex);
                     }
                 };
 
@@ -189,7 +241,7 @@ namespace Fast.UndoRedo.ReactiveUI
                 disposables.Add(new CoreUnsubscriber(() => ipc.PropertyChanged -= pc));
             }
 
-            this.registrations[reactiveObject] = disposables;
+            // final assign already added above
         }
 
         /// <summary>
@@ -203,7 +255,7 @@ namespace Fast.UndoRedo.ReactiveUI
                 return;
             }
 
-            if (this.registrations.TryGetValue(reactiveObject, out var list))
+            if (_registrations.TryGetValue(reactiveObject, out var list))
             {
                 foreach (var d in list)
                 {
@@ -217,15 +269,24 @@ namespace Fast.UndoRedo.ReactiveUI
                     }
                 }
 
-                this.registrations.Remove(reactiveObject);
+                _registrations.Remove(reactiveObject);
             }
 
-            if (this.valueCache.ContainsKey(reactiveObject))
+            try
             {
-                this.valueCache.Remove(reactiveObject);
+                _valueCache.Remove(reactiveObject);
+            }
+            catch
+            {
+                // ignore
             }
         }
 
+        /// <summary>
+        /// Handle a Reactive 'Changing' notification by recording the old value in the cache.
+        /// </summary>
+        /// <param name="sender">Source object that raised the notification.</param>
+        /// <param name="evt">Event payload containing property information.</param>
         private void OnChanging(object sender, object evt)
         {
             if (sender == null || evt == null)
@@ -238,7 +299,7 @@ namespace Fast.UndoRedo.ReactiveUI
                 return;
             }
 
-            string propName = TryGetPropertyName(evt);
+            string propName = ReactiveAdapterHelpers.TryGetPropertyName(evt, this.logger);
             if (propName == null)
             {
                 return;
@@ -252,15 +313,29 @@ namespace Fast.UndoRedo.ReactiveUI
 
             try
             {
-                this.valueCache[sender][propName] = prop.GetValue(sender);
+                if (!_valueCache.TryGetValue(sender, out var cache))
+                {
+                    cache = new Dictionary<string, object>();
+                    _valueCache.Add(sender, cache);
+                }
+
+                cache[propName] = prop.GetValue(sender);
             }
             catch (Exception ex)
             {
                 this.logger.LogException(ex);
-                this.valueCache[sender][propName] = null;
+                if (_valueCache.TryGetValue(sender, out var cache2))
+                {
+                    cache2[propName] = null;
+                }
             }
         }
 
+        /// <summary>
+        /// Handle a Reactive 'Changed' notification by creating an undo action for the property change.
+        /// </summary>
+        /// <param name="sender">Source object that raised the notification.</param>
+        /// <param name="evt">Event payload containing property information.</param>
         private void OnChanged(object sender, object evt)
         {
             if (sender == null || evt == null)
@@ -273,7 +348,7 @@ namespace Fast.UndoRedo.ReactiveUI
                 return;
             }
 
-            string propName = TryGetPropertyName(evt);
+            string propName = ReactiveAdapterHelpers.TryGetPropertyName(evt, this.logger);
             if (propName == null)
             {
                 return;
@@ -286,7 +361,7 @@ namespace Fast.UndoRedo.ReactiveUI
             }
 
             object oldVal = null;
-            if (this.valueCache.TryGetValue(sender, out var cache) && cache.TryGetValue(propName, out var o))
+            if (_valueCache.TryGetValue(sender, out var cache) && cache.TryGetValue(propName, out var o))
             {
                 oldVal = o;
             }
@@ -308,108 +383,25 @@ namespace Fast.UndoRedo.ReactiveUI
                 return;
             }
 
-            var action = ActionFactory.CreatePropertyChangeAction(sender, prop, setter, oldVal, newVal, (string)$"{sender.GetType().Name}.{prop.Name} changed", this.logger);
+            var action = ActionFactory.CreatePropertyChangeAction(sender, prop, setter, oldVal, newVal, $"{sender.GetType().Name}.{prop.Name} changed", this.logger);
             if (action != null)
             {
                 this.service.Push(action);
             }
 
-            if (this.valueCache.TryGetValue(sender, out var cache2))
+            try
             {
+                if (!_valueCache.TryGetValue(sender, out var cache2))
+                {
+                    cache2 = new Dictionary<string, object>();
+                    _valueCache.Add(sender, cache2);
+                }
+
                 cache2[propName] = newVal;
             }
-        }
-
-        private static string TryGetPropertyName(object evt)
-        {
-            try
-            {
-                var t = evt.GetType();
-                var pn = t.GetProperty("PropertyName") ?? t.GetProperty("PropertyChangingEventArgs") ?? t.GetProperty("PropertyChangedEventArgs");
-                if (pn != null)
-                {
-                    var val = pn.GetValue(evt);
-                    if (val is string s)
-                    {
-                        return s;
-                    }
-
-                    var inner = val?.GetType().GetProperty("PropertyName");
-                    if (inner != null)
-                    {
-                        return inner.GetValue(val) as string;
-                    }
-                }
-
-                var fn = t.GetField("PropertyName");
-                if (fn != null)
-                {
-                    return fn.GetValue(evt) as string;
-                }
-            }
             catch (Exception ex)
             {
-                new DebugCoreLogger().LogException(ex);
-            }
-
-            return null;
-        }
-
-        private static object GetMemberValue(object obj, string name)
-        {
-            var t = obj.GetType();
-            var prop = t.GetProperty(name, BindingFlags.Public | BindingFlags.Instance);
-            if (prop != null)
-            {
-                return prop.GetValue(obj);
-            }
-
-            var field = t.GetField(name, BindingFlags.Public | BindingFlags.Instance);
-            if (field != null)
-            {
-                return field.GetValue(obj);
-            }
-
-            return null;
-        }
-
-        private static void SubscribeObservable(object observable, Action<object> onNext, List<IDisposable> disposables)
-        {
-            if (observable == null)
-            {
-                return;
-            }
-
-            var obsType = observable.GetType();
-            var iobs = obsType.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IObservable<>));
-            if (iobs == null)
-            {
-                return;
-            }
-
-            var eventType = iobs.GetGenericArguments()[0];
-
-            var observerType = typeof(CoreObserverWrapper<>).MakeGenericType(eventType);
-            var observer = Activator.CreateInstance(observerType, onNext);
-
-            // find Subscribe method
-            var mi = obsType.GetMethods().FirstOrDefault(m => m.Name == "Subscribe" && m.GetParameters().Length == 1);
-            if (mi == null)
-            {
-                return;
-            }
-
-            try
-            {
-                var disp = mi.Invoke(observable, new object[] { observer }) as IDisposable;
-                if (disp != null)
-                {
-                    disposables.Add(disp);
-                }
-            }
-            catch (Exception ex)
-            {
-                new DebugCoreLogger().LogException(ex);
+                this.logger.LogException(ex);
             }
         }
     }

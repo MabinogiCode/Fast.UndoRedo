@@ -1,0 +1,566 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Fast.UndoRedo.Core</name>
+    </assembly>
+    <members>
+        <member name="T:Fast.UndoRedo.Core.ActionFactory">
+            <summary>
+            Provides factory methods for creating undo/redo actions.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.ActionFactory.CreatePropertyChangeAction(System.Object,System.Reflection.PropertyInfo,System.Object,System.Object,System.Object,System.String,Fast.UndoRedo.Core.Logging.ICoreLogger)">
+            <summary>
+            Creates an undoable action for a property change.
+            </summary>
+            <param name="target">The target object whose property is changing.</param>
+            <param name="prop">The property information.</param>
+            <param name="setterDelegate">The delegate to set the property value.</param>
+            <param name="oldValue">The old value of the property.</param>
+            <param name="newValue">The new value of the property.</param>
+            <param name="description">A description of the action.</param>
+            <param name="logger">The logger for error reporting.</param>
+            <returns>The created undoable action, or null if creation failed.</returns>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.ActionFactory.CreateCollectionChangeAction(System.Object,System.Type,Fast.UndoRedo.Core.CollectionChangeType,System.Object,System.Object,System.Int32,System.Int32,System.Collections.Generic.IEnumerable{System.Object},System.String,Fast.UndoRedo.Core.Logging.ICoreLogger)">
+            <summary>
+            Creates an undoable action for a collection change.
+            </summary>
+            <param name="collectionInstance">The collection instance.</param>
+            <param name="elementType">The type of elements in the collection.</param>
+            <param name="changeType">The type of collection change.</param>
+            <param name="itemObj">The item involved in the change.</param>
+            <param name="oldItemObj">The old item for replace operations.</param>
+            <param name="index">The index of the change.</param>
+            <param name="toIndex">The target index for move operations.</param>
+            <param name="clearedItems">The items cleared in a clear operation.</param>
+            <param name="description">A description of the action.</param>
+            <param name="logger">The logger for error reporting.</param>
+            <returns>The created undoable action, or null if creation failed.</returns>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.CollectionChangeAction`1">
+            <summary>
+            Represents a concrete change action applied to an <see cref="T:System.Collections.ObjectModel.ObservableCollection`1"/>.
+            The action can be undone and redone to restore or reapply the change.
+            </summary>
+            <typeparam name="T">Type of elements stored in the collection.</typeparam>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.CollectionChangeAction`1.#ctor(System.Collections.ObjectModel.ObservableCollection{`0},Fast.UndoRedo.Core.CollectionChangeType,`0,System.Int32,`0,System.Int32,System.Collections.Generic.IEnumerable{`0},System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fast.UndoRedo.Core.CollectionChangeAction`1"/> class.
+            </summary>
+            <param name="collection">The target collection where the change occurred.</param>
+            <param name="type">Type of collection change (Add/Remove/Replace/Move/Clear).</param>
+            <param name="item">The item involved in the change (new item for Add/Replace).</param>
+            <param name="index">Index where the change occurred, if applicable.</param>
+            <param name="oldItem">Previous item for Replace actions.</param>
+            <param name="toIndex">Target index for Move actions.</param>
+            <param name="clearedItems">Snapshot of items cleared for Clear action.</param>
+            <param name="description">Optional human-readable description.</param>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.CollectionChangeAction`1.Description">
+            <inheritdoc />
+        </member>
+        <member name="M:Fast.UndoRedo.Core.CollectionChangeAction`1.Undo">
+            <inheritdoc />
+        </member>
+        <member name="M:Fast.UndoRedo.Core.CollectionChangeAction`1.Redo">
+            <inheritdoc />
+        </member>
+        <member name="T:Fast.UndoRedo.Core.CollectionChangeType">
+            <summary>
+            Enumerates types of collection changes handled by the undo/redo system.
+            </summary>
+        </member>
+        <member name="F:Fast.UndoRedo.Core.CollectionChangeType.Add">
+            <summary>
+            Adds an item to the collection.
+            </summary>
+        </member>
+        <member name="F:Fast.UndoRedo.Core.CollectionChangeType.Remove">
+            <summary>
+            Removes an item from the collection.
+            </summary>
+        </member>
+        <member name="F:Fast.UndoRedo.Core.CollectionChangeType.Replace">
+            <summary>
+            Replaces an item in the collection.
+            </summary>
+        </member>
+        <member name="F:Fast.UndoRedo.Core.CollectionChangeType.Move">
+            <summary>
+            Moves an item within the collection.
+            </summary>
+        </member>
+        <member name="F:Fast.UndoRedo.Core.CollectionChangeType.Clear">
+            <summary>
+            Clears all items from the collection.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.PropertyChangeAction`2">
+            <summary>
+            Represents an undoable property change action.
+            </summary>
+            <typeparam name="TTarget">The type of the target object.</typeparam>
+            <typeparam name="TValue">The type of the property value.</typeparam>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.PropertyChangeAction`2.#ctor(`0,System.Action{`0,`1},`1,`1,System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fast.UndoRedo.Core.PropertyChangeAction`2"/> class.
+            </summary>
+            <param name="target">The target object whose property is being changed.</param>
+            <param name="setter">The action to set the property value.</param>
+            <param name="oldValue">The old value of the property.</param>
+            <param name="newValue">The new value of the property.</param>
+            <param name="description">The description of the action.</param>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.PropertyChangeAction`2.Description">
+            <summary>
+            Gets the description of the action.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.PropertyChangeAction`2.Undo">
+            <summary>
+            Undoes the property change.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.PropertyChangeAction`2.Redo">
+            <summary>
+            Redoes the property change.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.CollectionRegistrar">
+            <summary>
+            Provides methods to register collections for undo/redo tracking.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.CollectionRegistrar.RegisterCollection(System.Object,Fast.UndoRedo.Core.UndoRedoService,System.Collections.Generic.Dictionary{System.Object,System.Collections.Generic.List{System.Object}},Fast.UndoRedo.Core.Logging.ICoreLogger)">
+            <summary>
+            Registers a collection instance with the UndoRedoService by delegating to the service's internal attachment method.
+            </summary>
+            <param name="collectionInstance">The collection instance to register for undo/redo tracking.</param>
+            <param name="service">The UndoRedoService instance.</param>
+            <param name="snapshots">The snapshots dictionary for tracking changes.</param>
+            <param name="logger">The logger for error reporting.</param>
+            <returns>The disposable subscription, or null if registration failed.</returns>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.CollectionSubscription">
+            <summary>
+            Manages subscription to collection change events and records undo/redo actions for collections.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.CollectionSubscription.#ctor(System.Object,Fast.UndoRedo.Core.UndoRedoService,System.Collections.Generic.Dictionary{System.Object,System.Collections.Generic.List{System.Object}})">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fast.UndoRedo.Core.CollectionSubscription"/> class.
+            </summary>
+            <param name="collectionInstance">The collection instance to subscribe to.</param>
+            <param name="service">The undo/redo service.</param>
+            <param name="snapshots">Dictionary of collection snapshots.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.CollectionSubscription.#ctor(System.Object,Fast.UndoRedo.Core.UndoRedoService,System.Collections.Generic.Dictionary{System.Object,System.Collections.Generic.List{System.Object}},Fast.UndoRedo.Core.Logging.ICoreLogger)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fast.UndoRedo.Core.CollectionSubscription"/> class with a logger.
+            </summary>
+            <param name="collectionInstance">The collection instance to subscribe to.</param>
+            <param name="service">The undo/redo service.</param>
+            <param name="snapshots">Dictionary of collection snapshots.</param>
+            <param name="logger">Logger for error reporting.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.CollectionSubscription.Dispose">
+            <summary>
+            Unsubscribes from collection change events.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.CollectionSubscription.CreateAndPush(System.String,System.Object,System.Object,System.Int32,System.Int32,System.Collections.Generic.IEnumerable{System.Object},System.String)">
+            <summary>
+            Helper that creates and pushes an undoable action for a collection change.
+            Extracted from the event handler to avoid nested/local functions.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.CollectionSubscription.OnCollectionChanged(System.Object,System.Collections.Specialized.NotifyCollectionChangedEventArgs)">
+            <summary>
+            Handles collection changed events and records undo/redo actions.
+            </summary>
+            <param name="sender">The event sender.</param>
+            <param name="e">The event arguments.</param>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.CompositeDisposable">
+            <summary>
+            Represents a group of disposable resources that are disposed together.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.CompositeDisposable.#ctor(System.Collections.Generic.List{System.IDisposable})">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fast.UndoRedo.Core.CompositeDisposable"/> class.
+            </summary>
+            <param name="list">The list of disposables to manage.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.CompositeDisposable.Dispose">
+            <summary>
+            Disposes all disposables in the group.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.CoreObserverWrapper`1">
+            <summary>
+            Wraps an observer action for core functionality.
+            </summary>
+            <typeparam name="T">The type of the observed value.</typeparam>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.CoreObserverWrapper`1.#ctor(System.Action{System.Object})">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fast.UndoRedo.Core.CoreObserverWrapper`1"/> class.
+            </summary>
+            <param name="onNext">The action to invoke when a value is observed.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.CoreObserverWrapper`1.OnCompleted">
+            <summary>
+            Called when the observable sequence completes.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.CoreObserverWrapper`1.OnError(System.Exception)">
+            <summary>
+            Called when the observable sequence encounters an error.
+            </summary>
+            <param name="error">The exception that occurred.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.CoreObserverWrapper`1.OnNext(`0)">
+            <summary>
+            Called when the observable sequence produces a value.
+            </summary>
+            <param name="value">The value produced.</param>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.CoreUnsubscriber">
+            <summary>
+            Simple disposable that invokes an action when disposed.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.CoreUnsubscriber.#ctor(System.Action)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fast.UndoRedo.Core.CoreUnsubscriber"/> class.
+            </summary>
+            <param name="dispose">The action to invoke when disposed.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.CoreUnsubscriber.Dispose">
+            <summary>
+            Disposes the instance and invokes the dispose action.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.DisposableAction">
+            <summary>
+            Disposable wrapper that invokes an action when disposed.
+            Used to remove event handlers and other cleanup actions.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.DisposableAction.#ctor(System.Action)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fast.UndoRedo.Core.DisposableAction"/> class.
+            </summary>
+            <param name="dispose">Action to invoke on dispose.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.DisposableAction.Dispose">
+            <summary>
+            Dispose and invoke the wrapped action once.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.FastUndoIgnoreAttribute">
+            <summary>
+            Attribute to mark properties or classes that should be ignored by the undo/redo system.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.IUndoableAction">
+            <summary>
+            Represents an action that can be undone and redone.
+            Implementations encapsulate the logic required to undo and redo a change.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.IUndoableAction.Description">
+            <summary>
+            Gets a short human-readable description of the action.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.IUndoableAction.Undo">
+            <summary>
+            Reverts the action.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.IUndoableAction.Redo">
+            <summary>
+            Reapplies the action after an undo.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.Logging.DebugCoreLogger">
+            <summary>
+            Logger implementation that outputs messages to the debug console.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Logging.DebugCoreLogger.Log(System.String)">
+            <summary>
+            Logs a message to the debug output.
+            </summary>
+            <param name="message">The message to log.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Logging.DebugCoreLogger.LogException(System.Exception)">
+            <summary>
+            Logs an exception to the debug output.
+            </summary>
+            <param name="ex">The exception to log.</param>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.Logging.ICoreLogger">
+            <summary>
+            Interface for logging messages and exceptions in the undo/redo core system.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Logging.ICoreLogger.Log(System.String)">
+            <summary>
+            Logs a message.
+            </summary>
+            <param name="message">The message to log.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Logging.ICoreLogger.LogException(System.Exception)">
+            <summary>
+            Logs an exception.
+            </summary>
+            <param name="ex">The exception to log.</param>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.Logging.LoggerExtensions">
+            <summary>
+            Extension methods for the <see cref="T:Fast.UndoRedo.Core.Logging.ICoreLogger"/> interface.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Logging.LoggerExtensions.Log(Fast.UndoRedo.Core.Logging.ICoreLogger,System.String)">
+            <summary>
+            Logs a message using the logger if it is not null.
+            </summary>
+            <param name="logger">The logger instance.</param>
+            <param name="message">The message to log.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Logging.LoggerExtensions.LogException(Fast.UndoRedo.Core.Logging.ICoreLogger,System.Exception)">
+            <summary>
+            Logs an exception using the logger if it is not null.
+            </summary>
+            <param name="logger">The logger instance.</param>
+            <param name="ex">The exception to log.</param>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.PropertyChangeRegistrar">
+            <summary>
+            Provides methods to register objects for property change undo/redo tracking.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.PropertyChangeRegistrar.Register(System.Object,Fast.UndoRedo.Core.UndoRedoService,System.Runtime.CompilerServices.ConditionalWeakTable{System.Object,System.Collections.Generic.Dictionary{System.String,System.Object}},Fast.UndoRedo.Core.Logging.ICoreLogger)">
+            <summary>
+            Registers an object for property change undo/redo tracking by subscribing to property change events.
+            </summary>
+            <param name="target">The target object to register.</param>
+            <param name="service">The UndoRedoService instance.</param>
+            <param name="valueCache">The cache for storing old property values.</param>
+            <param name="logger">The logger for error reporting.</param>
+            <returns>An IDisposable to unsubscribe the registrations.</returns>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.ReflectionHelpers">
+            <summary>
+            Provides helper methods for reflection operations used in the undo/redo system.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.ReflectionHelpers.CreateSetter(System.Type,System.Reflection.PropertyInfo)">
+            <summary>
+            Creates a setter action for a property.
+            </summary>
+            <param name="targetType">The type of the target object.</param>
+            <param name="prop">The property information.</param>
+            <returns>The compiled setter action, or null if creation failed.</returns>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.ReflectionHelpers.CreateSetter(System.Type,System.Reflection.PropertyInfo,Fast.UndoRedo.Core.Logging.ICoreLogger)">
+            <summary>
+            Creates a setter action for a property.
+            </summary>
+            <param name="targetType">The type of the target object.</param>
+            <param name="prop">The property information.</param>
+            <param name="logger">The logger for error reporting.</param>
+            <returns>The compiled setter action, or null if creation failed.</returns>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.RegistrationTracker">
+            <summary>
+            Tracks registrations of objects for change notifications and collection subscriptions.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.RegistrationTracker.#ctor(Fast.UndoRedo.Core.UndoRedoService)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fast.UndoRedo.Core.RegistrationTracker"/> class.
+            </summary>
+            <param name="service">Service used to push undoable actions.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.RegistrationTracker.#ctor(Fast.UndoRedo.Core.UndoRedoService,Fast.UndoRedo.Core.Logging.ICoreLogger)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fast.UndoRedo.Core.RegistrationTracker"/> class.
+            </summary>
+            <param name="service">Service used to push undoable actions.</param>
+            <param name="logger">Logger for error reporting.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.RegistrationTracker.Register(System.Object)">
+            <summary>
+            Register an object for property and collection change tracking.
+            </summary>
+            <param name="obj">Object to register.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.RegistrationTracker.Unregister(System.Object)">
+            <summary>
+            Unregister an object and remove any subscriptions and cached values.
+            </summary>
+            <param name="obj">Object to unregister.</param>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.UndoRedoService">
+            <summary>
+            Service that records undoable actions and provides undo/redo operations.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.UndoRedoService.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fast.UndoRedo.Core.UndoRedoService"/> class.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.UndoRedoService.#ctor(Fast.UndoRedo.Core.Logging.ICoreLogger)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fast.UndoRedo.Core.UndoRedoService"/> class with an optional logger.
+            </summary>
+            <param name="logger">The logger to use.</param>
+        </member>
+        <member name="E:Fast.UndoRedo.Core.UndoRedoService.StateChanged">
+            <summary>
+            Event raised when the undo/redo state changes.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.UndoRedoService.Logger">
+            <summary>
+            Gets the optional logger used by core components.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.UndoRedoService.IsApplying">
+            <summary>
+            Gets a value indicating whether the service is currently applying an undo/redo operation.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.UndoRedoService.CanUndo">
+            <summary>
+            Gets a value indicating whether undo is available.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.UndoRedoService.CanRedo">
+            <summary>
+            Gets a value indicating whether redo is available.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.UndoRedoService.TopUndoDescription">
+            <summary>
+            Gets the description of the top undo action if available.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.UndoRedoService.TopRedoDescription">
+            <summary>
+            Gets the description of the top redo action if available.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.UndoRedoService.Push(Fast.UndoRedo.Core.IUndoableAction)">
+            <summary>
+            Pushes an undoable action onto the stack. Actions pushed while the service is applying are ignored.
+            </summary>
+            <param name="action">The action to record.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.UndoRedoService.Undo">
+            <summary>
+            Undoes the most recent action, if any.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.UndoRedoService.Redo">
+            <summary>
+            Redoes the most recently undone action, if any.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.UndoRedoService.Clear">
+            <summary>
+            Clears the undo and redo stacks.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.UndoRedoService.Attach(System.Object)">
+            <summary>
+            Attach an arbitrary object to be tracked (properties + collections recursively).
+            </summary>
+            <param name="obj">The object to attach for tracking.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.UndoRedoService.Detach(System.Object)">
+            <summary>
+            Detach an object from tracking.
+            </summary>
+            <param name="obj">The object to detach from tracking.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.UndoRedoService.AttachCollection(System.Collections.Specialized.INotifyCollectionChanged)">
+            <summary>
+            Attach a collection instance directly (no need to replace with UndoableCollection).
+            </summary>
+            <param name="collection">The collection to attach.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.UndoRedoService.DetachCollection(System.Collections.Specialized.INotifyCollectionChanged)">
+            <summary>
+            Detach a previously attached collection.
+            </summary>
+            <param name="collection">The collection to detach.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.UndoRedoService.Subscribe(System.IObserver{Fast.UndoRedo.Core.UndoRedoState})">
+            <summary>
+            Subscribe to state notifications.
+            </summary>
+            <param name="observer">Observer that receives state updates.</param>
+            <returns>A disposable handle to unsubscribe.</returns>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.UndoRedoService.AttachCollectionInternal(System.Object,System.Collections.Generic.Dictionary{System.Object,System.Collections.Generic.List{System.Object}})">
+            <summary>
+            Centralized method to attach a collection and prevent duplicate subscriptions.
+            </summary>
+            <param name="collectionInstance">The collection instance to attach.</param>
+            <param name="snapshots">The dictionary of snapshots, used by the registration tracker.</param>
+            <returns>A disposable subscription, or null if already subscribed or failed.</returns>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.UndoRedoServiceUnsubscriber">
+            <summary>
+            Disposable returned by <see cref="M:Fast.UndoRedo.Core.UndoRedoService.Subscribe(System.IObserver{Fast.UndoRedo.Core.UndoRedoState})"/> to unsubscribe observers.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.UndoRedoServiceUnsubscriber.#ctor(System.Collections.Generic.List{System.IObserver{Fast.UndoRedo.Core.UndoRedoState}},System.IObserver{Fast.UndoRedo.Core.UndoRedoState},System.Object)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fast.UndoRedo.Core.UndoRedoServiceUnsubscriber"/> class.
+            </summary>
+            <param name="observers">The list of observers.</param>
+            <param name="observer">The observer to remove on dispose.</param>
+            <param name="sync">The synchronization object.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.UndoRedoServiceUnsubscriber.Dispose">
+            <summary>
+            Disposes the instance and removes the observer from the list.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.UndoRedoState">
+            <summary>
+            Represents the current undo/redo state (availability and descriptions).
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.UndoRedoState.CanUndo">
+            <summary>
+            Gets or sets a value indicating whether an undo is available.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.UndoRedoState.CanRedo">
+            <summary>
+            Gets or sets a value indicating whether a redo is available.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.UndoRedoState.TopUndoDescription">
+            <summary>
+            Gets or sets the description of the top undo action.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.UndoRedoState.TopRedoDescription">
+            <summary>
+            Gets or sets the description of the top redo action.
+            </summary>
+        </member>
+    </members>
+</doc>

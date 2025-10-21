@@ -1,7 +1,7 @@
 # Fast.UndoRedo
 
-[![Build Status](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
-[![Codecov](https://codecov.io/gh/OWNER/REPO/branch/main/graph/badge.svg)](https://codecov.io/gh/OWNER/REPO)
+[![Build Status](https://github.com/MabinogiCode/Fast.UndoRedo/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MabinogiCode/Fast.UndoRedo/actions/workflows/ci.yml)
+[![Codecov](https://codecov.io/gh/MabinogiCode/Fast.UndoRedo/branch/main/graph/badge.svg)](https://codecov.io/gh/MabinogiCode/Fast.UndoRedo)
 
 Fast, non-intrusive undo/redo library for .NET applications. Designed to attach to existing objects and collections (`INotifyPropertyChanged`, `INotifyCollectionChanged`) and record undo/redo actions without forcing you to replace your models.
 
@@ -40,7 +40,7 @@ Logging
 CI / Packaging
 - GitHub Actions workflow available at `.github/workflows/ci.yml`:
   - Builds the solution, runs tests and collects coverage.
-  - Uploads coverage to codecov.io.
+  - Uploads coverage to [Codecov](https://app.codecov.io/gh/MabinogiCode/Fast.UndoRedo) (requires `CODECOV_TOKEN` secret).
   - On tags `vX.Y.Z`, packs a NuGet package and (optionally) signs it and pushes it to NuGet.org if `NUGET_API_KEY` is configured.
 
 Contributing
@@ -49,5 +49,3 @@ Contributing
 Roadmap
 - Finish ReactiveUI adapter to support DynamicData extended collection operations fully.
 - Add more tests and examples.
-
-Replace OWNER/REPO in the badge URLs with your repository path.

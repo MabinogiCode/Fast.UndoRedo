@@ -4,7 +4,22 @@
     <LangVersion>latest</LangVersion>
     <RootNamespace>Fast.UndoRedo.Core</RootNamespace>
     <WarningsAsErrors>IDE0011;IDE0052;CS0219</WarningsAsErrors>
+    <Authors>MabinogiCode</Authors>
+    <Company>MabinogiCode</Company>
+    <Description>Fast, non-intrusive undo/redo library for .NET. Attach to existing objects and collections to record undo/redo actions without changing your models.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/MabinogiCode/Fast.UndoRedo</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/MabinogiCode/Fast.UndoRedo</PackageProjectUrl>
+    <PackageReadmeFile>nuget-readme.md</PackageReadmeFile>
+    <PackageTags>undo;redo;mvvm;reactiveui;dotnet;netstandard;collection;propertychanged</PackageTags>
+    <PackageReleaseNotes>See GitHub for changelog and roadmap.</PackageReleaseNotes>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IncludeXmlDocumentation>true</IncludeXmlDocumentation>
   </PropertyGroup>
+  <ItemGroup>
+    <None Include="nuget-readme.md" Pack="true" PackagePath="" />
+    <None Include="Fast.UndoRedo.Core.xml" Pack="true" PackagePath="" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

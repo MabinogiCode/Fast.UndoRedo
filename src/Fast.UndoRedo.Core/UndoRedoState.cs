@@ -6,22 +6,22 @@
     public class UndoRedoState
     {
         /// <summary>
-        /// Indicates whether an undo is available.
+        /// Gets or sets a value indicating whether an undo is available.
         /// </summary>
         public bool CanUndo { get; set; }
 
         /// <summary>
-        /// Indicates whether a redo is available.
+        /// Gets or sets a value indicating whether a redo is available.
         /// </summary>
         public bool CanRedo { get; set; }
 
         /// <summary>
-        /// Description of the top undo action.
+        /// Gets or sets the description of the top undo action.
         /// </summary>
         public string TopUndoDescription { get; set; }
 
         /// <summary>
-        /// Description of the top redo action.
+        /// Gets or sets the description of the top redo action.
         /// </summary>
         public string TopRedoDescription { get; set; }
     }

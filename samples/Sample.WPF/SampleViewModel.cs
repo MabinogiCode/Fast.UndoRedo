@@ -15,6 +15,16 @@
         private bool _isChecked;
         private string _selectedItem;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SampleViewModel"/> class.
+        /// </summary>
+        public SampleViewModel()
+        {
+            // Items will be attached to the service by the host if needed
+            Items.Add("Item 1");
+            Items.Add("Item 2");
+        }
+
         /// <inheritdoc />
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -26,16 +36,6 @@
         /// Uses ObservableCollection so it can be attached to UndoRedoService externally.
         /// </summary>
         public ObservableCollection<string> Items { get; } = new ObservableCollection<string>();
-
-        /// <summary>
-        /// Initializes a new instance of the sample view model.
-        /// </summary>
-        public SampleViewModel()
-        {
-            // Items will be attached to the service by the host if needed
-            Items.Add("Item 1");
-            Items.Add("Item 2");
-        }
 
         /// <summary>
         /// Sample text field property.

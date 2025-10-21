@@ -1,9 +1,9 @@
-﻿using Fast.UndoRedo.Core.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Threading;
-using System.Collections.Specialized;
+using Fast.UndoRedo.Core.Logging;
 
 namespace Fast.UndoRedo.Core
 {
@@ -17,37 +17,12 @@ namespace Fast.UndoRedo.Core
         private readonly List<IObserver<UndoRedoState>> _observers = new List<IObserver<UndoRedoState>>();
         private readonly object _sync = new object();
 
-        /// <summary>
-        /// Optional logger used by core components.
-        /// </summary>
-        public ICoreLogger Logger { get; }
-
-        /// <summary>
-        /// Event raised when the undo/redo state changes.
-        /// </summary>
-        public event EventHandler<UndoRedoState> StateChanged;
-
-        private bool _isApplying;
-
-        /// <summary>
-        /// Gets whether the service is currently applying an undo/redo operation.
-        /// </summary>
-        public bool IsApplying
-        {
-            get
-            {
-                lock (_sync)
-                {
-                    return _isApplying;
-                }
-            }
-        }
-
         // tracker for Attach/Detach of objects
         private readonly RegistrationTracker _tracker;
 
-        // explicit collection subscriptions created via AttachCollection
+        // Centralized store for all collection subscriptions to prevent duplicates.
         private readonly Dictionary<INotifyCollectionChanged, IDisposable> _collectionSubscriptions = new Dictionary<INotifyCollectionChanged, IDisposable>();
+        private bool _isApplying;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UndoRedoService"/> class.
@@ -60,6 +35,7 @@ namespace Fast.UndoRedo.Core
         /// <summary>
         /// Initializes a new instance of the <see cref="UndoRedoService"/> class with an optional logger.
         /// </summary>
+        /// <param name="logger">The logger to use.</param>
         public UndoRedoService(ICoreLogger logger)
         {
             this.Logger = logger ?? new Logging.DebugCoreLogger();
@@ -67,7 +43,31 @@ namespace Fast.UndoRedo.Core
         }
 
         /// <summary>
-        /// Gets whether undo is available.
+        /// Event raised when the undo/redo state changes.
+        /// </summary>
+        public event EventHandler<UndoRedoState> StateChanged;
+
+        /// <summary>
+        /// Gets the optional logger used by core components.
+        /// </summary>
+        public ICoreLogger Logger { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the service is currently applying an undo/redo operation.
+        /// </summary>
+        public bool IsApplying
+        {
+            get
+            {
+                lock (_sync)
+                {
+                    return _isApplying;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether undo is available.
         /// </summary>
         public bool CanUndo
         {
@@ -81,7 +81,7 @@ namespace Fast.UndoRedo.Core
         }
 
         /// <summary>
-        /// Gets whether redo is available.
+        /// Gets a value indicating whether redo is available.
         /// </summary>
         public bool CanRedo
         {
@@ -145,48 +145,6 @@ namespace Fast.UndoRedo.Core
             }
 
             NotifyStateChanged();
-        }
-
-        private void ExecuteAction(Action action)
-        {
-            if (action == null)
-            {
-                return;
-            }
-
-            // mark applying
-            lock (_sync)
-            {
-                _isApplying = true;
-            }
-
-            try
-            {
-                action();
-            }
-            finally
-            {
-                // Instead of clearing _isApplying immediately, post a callback to the current synchronization context (if any)
-                // so that any cascading UI events on that context occur while _isApplying is still true and won't be recorded.
-                var sc = SynchronizationContext.Current;
-                if (sc != null)
-                {
-                    sc.Post(_ =>
-                    {
-                        lock (_sync)
-                        {
-                            _isApplying = false;
-                        }
-                    }, null);
-                }
-                else
-                {
-                    lock (_sync)
-                    {
-                        _isApplying = false;
-                    }
-                }
-            }
         }
 
         /// <summary>
@@ -256,6 +214,7 @@ namespace Fast.UndoRedo.Core
         /// <summary>
         /// Attach an arbitrary object to be tracked (properties + collections recursively).
         /// </summary>
+        /// <param name="obj">The object to attach for tracking.</param>
         public void Attach(object obj)
         {
             _tracker.Register(obj);
@@ -264,6 +223,7 @@ namespace Fast.UndoRedo.Core
         /// <summary>
         /// Detach an object from tracking.
         /// </summary>
+        /// <param name="obj">The object to detach from tracking.</param>
         public void Detach(object obj)
         {
             _tracker.Unregister(obj);
@@ -272,35 +232,16 @@ namespace Fast.UndoRedo.Core
         /// <summary>
         /// Attach a collection instance directly (no need to replace with UndoableCollection).
         /// </summary>
+        /// <param name="collection">The collection to attach.</param>
         public void AttachCollection(INotifyCollectionChanged collection)
         {
-            if (collection == null)
-            {
-                return;
-            }
-
-            lock (_sync)
-            {
-                if (_collectionSubscriptions.ContainsKey(collection))
-                {
-                    return;
-                }
-
-                try
-                {
-                    var sub = new CollectionSubscription(collection, this, null);
-                    _collectionSubscriptions[collection] = sub;
-                }
-                catch
-                {
-                    // ignore subscription creation errors
-                }
-            }
+            AttachCollectionInternal(collection, null);
         }
 
         /// <summary>
         /// Detach a previously attached collection.
         /// </summary>
+        /// <param name="collection">The collection to detach.</param>
         public void DetachCollection(INotifyCollectionChanged collection)
         {
             if (collection == null)
@@ -322,37 +263,6 @@ namespace Fast.UndoRedo.Core
                     }
 
                     _collectionSubscriptions.Remove(collection);
-                }
-            }
-        }
-
-        private void NotifyStateChanged()
-        {
-            var state = new UndoRedoState
-            {
-                CanUndo = CanUndo,
-                CanRedo = CanRedo,
-                TopRedoDescription = TopRedoDescription,
-                TopUndoDescription = TopUndoDescription
-            };
-
-            StateChanged?.Invoke(this, state);
-
-            List<IObserver<UndoRedoState>> copy;
-            lock (_sync)
-            {
-                copy = _observers.ToList();
-            }
-
-            foreach (var o in copy)
-            {
-                try
-                {
-                    o.OnNext(state);
-                }
-                catch
-                {
-                    // ignore observer exceptions
                 }
             }
         }
@@ -379,10 +289,119 @@ namespace Fast.UndoRedo.Core
                 CanUndo = CanUndo,
                 CanRedo = CanRedo,
                 TopRedoDescription = TopRedoDescription,
-                TopUndoDescription = TopUndoDescription
+                TopUndoDescription = TopUndoDescription,
             });
 
             return new UndoRedoServiceUnsubscriber(_observers, observer, _sync);
+        }
+
+        /// <summary>
+        /// Centralized method to attach a collection and prevent duplicate subscriptions.
+        /// </summary>
+        /// <param name="collectionInstance">The collection instance to attach.</param>
+        /// <param name="snapshots">The dictionary of snapshots, used by the registration tracker.</param>
+        /// <returns>A disposable subscription, or null if already subscribed or failed.</returns>
+        internal IDisposable AttachCollectionInternal(object collectionInstance, Dictionary<object, List<object>> snapshots)
+        {
+            if (collectionInstance is not INotifyCollectionChanged incc)
+            {
+                return null;
+            }
+
+            lock (_sync)
+            {
+                if (_collectionSubscriptions.ContainsKey(incc))
+                {
+                    return null;
+                }
+
+                try
+                {
+                    var sub = new CollectionSubscription(incc, this, snapshots, Logger);
+                    _collectionSubscriptions[incc] = sub;
+                    return sub;
+                }
+                catch (Exception ex)
+                {
+                    Logger?.LogException(ex);
+                    return null;
+                }
+            }
+        }
+
+        private void ExecuteAction(Action action)
+        {
+            if (action == null)
+            {
+                return;
+            }
+
+            // mark applying
+            lock (_sync)
+            {
+                _isApplying = true;
+            }
+
+            try
+            {
+                action();
+            }
+            finally
+            {
+                // Instead of clearing _isApplying immediately, post a callback to the current synchronization context (if any)
+                // so that any cascading UI events on that context occur while _isApplying is still true and won't be recorded.
+                var sc = SynchronizationContext.Current;
+                if (sc != null)
+                {
+                    sc.Post(
+                        _ =>
+                        {
+                            lock (_sync)
+                            {
+                                _isApplying = false;
+                            }
+                        },
+                        null);
+                }
+                else
+                {
+                    lock (_sync)
+                    {
+                        _isApplying = false;
+                    }
+                }
+            }
+        }
+
+        private void NotifyStateChanged()
+        {
+            var state = new UndoRedoState
+            {
+                CanUndo = CanUndo,
+                CanRedo = CanRedo,
+                TopRedoDescription = TopRedoDescription,
+                TopUndoDescription = TopUndoDescription,
+            };
+
+            StateChanged?.Invoke(this, state);
+
+            List<IObserver<UndoRedoState>> copy;
+            lock (_sync)
+            {
+                copy = _observers.ToList();
+            }
+
+            foreach (var o in copy)
+            {
+                try
+                {
+                    o.OnNext(state);
+                }
+                catch
+                {
+                    // ignore observer exceptions
+                }
+            }
         }
     }
 }

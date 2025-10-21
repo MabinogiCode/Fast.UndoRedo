@@ -8,6 +8,9 @@ using Fast.UndoRedo.Mvvm;
 
 namespace Sample.WPF
 {
+    /// <summary>
+    /// Main window for the sample WPF application demonstrating undo/redo functionality.
+    /// </summary>
     public class MainWindow : Window
     {
         private readonly UndoRedoService service = new UndoRedoService();
@@ -22,6 +25,9 @@ namespace Sample.WPF
         private Button undoButton;
         private Button redoButton;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MainWindow"/> class.
+        /// </summary>
         public MainWindow()
         {
             this.Title = "Sample WPF - Fast.UndoRedo";
@@ -31,6 +37,7 @@ namespace Sample.WPF
             this.adapter = new MvvmAdapter(this.service);
 
             this.vm = new SampleViewModel();
+
             // attach existing collection to the service
             this.service.AttachCollection(this.vm.Items);
 
@@ -53,6 +60,9 @@ namespace Sample.WPF
             };
         }
 
+        /// <summary>
+        /// Handle key down events for undo/redo keyboard shortcuts.
+        /// </summary>
         private void MainWindow_KeyDown(object sender, KeyEventArgs e)
         {
             if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
@@ -69,6 +79,9 @@ namespace Sample.WPF
             }
         }
 
+        /// <summary>
+        /// Builds the UI elements for the sample window.
+        /// </summary>
         private void BuildUi()
         {
             var grid = new Grid();

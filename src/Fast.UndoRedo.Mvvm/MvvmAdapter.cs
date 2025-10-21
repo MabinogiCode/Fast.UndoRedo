@@ -1,6 +1,7 @@
 ﻿namespace Fast.UndoRedo.Mvvm
 {
     using System;
+    using System.Runtime.CompilerServices;
     using Fast.UndoRedo.Core;
 
     /// <summary>
