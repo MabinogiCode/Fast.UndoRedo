@@ -1,10 +1,10 @@
-﻿using System;
+﻿using Fast.UndoRedo.Core.Logging;
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
-using System.Threading;
 using System.Reflection;
-using Fast.UndoRedo.Core.Logging;
+using System.Threading;
 
 namespace Fast.UndoRedo.Core
 {
@@ -153,6 +153,12 @@ namespace Fast.UndoRedo.Core
         /// Usage: myService.StackUndo(owner, newValue, ref myObject.PropertyBackingField, nameof(MyProperty));
         /// Requires a readable/writable property with the given name on the owner object.
         /// </summary>
+        /// <typeparam name="T">The type of the property value.</typeparam>
+        /// <param name="owner">The object that owns the property. Used to obtain the PropertyInfo and create the setter.</param>
+        /// <param name="newValue">The new value to assign to the property.</param>
+        /// <param name="actualValue">A reference to the backing field that holds the current value; this will be updated to <paramref name="newValue"/>.</param>
+        /// <param name="propertyName">The name of the property to set on the owner object.</param>
+        /// <returns>The value that was assigned to the backing field (usually <paramref name="newValue"/>).</returns>
         public T StackUndo<T>(object owner, T newValue, ref T actualValue, string propertyName)
         {
             // compare values
