@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Threading;
+using System.Reflection;
 using Fast.UndoRedo.Core.Logging;
 
 namespace Fast.UndoRedo.Core
@@ -145,6 +146,74 @@ namespace Fast.UndoRedo.Core
             }
 
             NotifyStateChanged();
+        }
+
+        /// <summary>
+        /// Small helper to set a property value and register an undo action in one call.
+        /// Usage: myService.StackUndo(owner, newValue, ref myObject.PropertyBackingField, nameof(MyProperty));
+        /// Requires a readable/writable property with the given name on the owner object.
+        /// </summary>
+        public T StackUndo<T>(object owner, T newValue, ref T actualValue, string propertyName)
+        {
+            // compare values
+            if (EqualityComparer<T>.Default.Equals(actualValue, newValue))
+            {
+                return actualValue;
+            }
+
+            try
+            {
+                if (owner != null && !string.IsNullOrEmpty(propertyName))
+                {
+                    var prop = owner.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic);
+                    if (prop != null && prop.CanWrite)
+                    {
+                        // create setter delegate
+                        var setter = ReflectionHelpers.CreateSetter(owner.GetType(), prop, Logger);
+
+                        var action = ActionFactory.CreatePropertyChangeAction(owner, prop, setter, actualValue, newValue, $"{propertyName} Changed", Logger);
+                        if (action != null)
+                        {
+                            Push(action);
+                        }
+                        else
+                        {
+                            // fallback: no action created, just assign
+                            actualValue = newValue;
+                            return newValue;
+                        }
+
+                        // apply new value (the action's Redo will reapply if undone)
+                        try
+                        {
+                            // use setter to apply immediately if available
+                            if (setter is Delegate d)
+                            {
+                                d.DynamicInvoke(owner, newValue);
+                            }
+                            else
+                            {
+                                prop.SetValue(owner, newValue);
+                            }
+                        }
+                        catch
+                        {
+                            // ignore apply errors, value will remain changed by direct assignment below
+                        }
+
+                        actualValue = newValue;
+                        return newValue;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogException(ex);
+            }
+
+            // fallback: no owner/property found or error -> just assign
+            actualValue = newValue;
+            return newValue;
         }
 
         /// <summary>
