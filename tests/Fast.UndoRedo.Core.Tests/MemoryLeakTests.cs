@@ -6,8 +6,14 @@ using Xunit;
 
 namespace Fast.UndoRedo.Core.Tests
 {
+    /// <summary>
+    /// Tests ensuring tracked objects are unregistered correctly and can be garbage-collected.
+    /// </summary>
     public class MemoryLeakTests
     {
+        /// <summary>
+        /// Verifies that registering and then unregistering an object allows it to be collected by the GC.
+        /// </summary>
         [Fact]
         public void Register_Unregister_AllowsGarbageCollection_ForTrackedObject()
         {
@@ -36,6 +42,9 @@ namespace Fast.UndoRedo.Core.Tests
             return wr;
         }
 
+        /// <summary>
+        /// Verifies there are no race conditions when registering/unregistering from multiple threads and taking collection snapshots.
+        /// </summary>
         [Fact]
         public void Register_MultipleThreads_NoRaceOnCollectionSnapshots()
         {
@@ -79,7 +88,13 @@ namespace Fast.UndoRedo.Core.Tests
 
         private class ObservableHolder : INotifyPropertyChanged
         {
-            public event PropertyChangedEventHandler PropertyChanged;
+            // explicit event implementation with empty add/remove to avoid 'unused event' warning while satisfying interface
+            event PropertyChangedEventHandler INotifyPropertyChanged.PropertyChanged
+            {
+                add { }
+                remove { }
+            }
+
             public System.Collections.ObjectModel.ObservableCollection<string> Items { get; } = new System.Collections.ObjectModel.ObservableCollection<string>();
         }
     }

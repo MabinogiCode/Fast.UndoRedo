@@ -1,11 +1,11 @@
 ﻿using Fast.UndoRedo.Core;
+using Fast.UndoRedo.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using Fast.UndoRedo.Core.Logging;
 
 namespace Fast.UndoRedo.ReactiveUI
 {
@@ -15,17 +15,18 @@ namespace Fast.UndoRedo.ReactiveUI
     /// </summary>
     public class ReactiveAdapter
     {
+        // instance fields
         private readonly UndoRedoService service;
         private readonly ICoreLogger logger;
 
         // Use ConditionalWeakTable to avoid keeping strong references to registered objects
-        private readonly ConditionalWeakTable<object, List<IDisposable>> _registrations = new ConditionalWeakTable<object, List<IDisposable>>();
-        private readonly ConditionalWeakTable<object, Dictionary<string, object>> _valueCache = new ConditionalWeakTable<object, Dictionary<string, object>>();
+        private readonly ConditionalWeakTable<object, List<IDisposable>> _registrations = new();
+        private readonly ConditionalWeakTable<object, Dictionary<string, object>> _valueCache = new();
 
-        private readonly object _sync = new object();
+        private readonly object _sync = new();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ReactiveAdapter"/>.
+        /// Initializes a new instance of the <see cref="ReactiveAdapter"/> class.
         /// </summary>
         /// <param name="service">The undo/redo service used to push recorded actions.</param>
         public ReactiveAdapter(UndoRedoService service)
@@ -33,10 +34,124 @@ namespace Fast.UndoRedo.ReactiveUI
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ReactiveAdapter"/> class with an optional logger.
+        /// </summary>
+        /// <param name="service">The undo/redo service used to push recorded actions.</param>
+        /// <param name="logger">Optional logger used by the adapter for diagnostics.</param>
         public ReactiveAdapter(UndoRedoService service, ICoreLogger logger)
         {
             this.service = service ?? throw new ArgumentNullException(nameof(service));
             this.logger = logger ?? new DebugCoreLogger();
+        }
+
+        /// <summary>
+        /// Tries to extract a property name from a Reactive-style event object.
+        /// </summary>
+        /// <param name="evt">The event object published by the observable.</param>
+        /// <returns>The property name if found; otherwise null.</returns>
+        private static string TryGetPropertyName(object evt)
+        {
+            try
+            {
+                var t = evt.GetType();
+                var pn = t.GetProperty("PropertyName") ?? t.GetProperty("PropertyChangingEventArgs") ?? t.GetProperty("PropertyChangedEventArgs");
+                if (pn != null)
+                {
+                    var val = pn.GetValue(evt);
+                    if (val is string s)
+                    {
+                        return s;
+                    }
+
+                    var inner = val?.GetType().GetProperty("PropertyName");
+                    if (inner != null)
+                    {
+                        return inner.GetValue(val) as string;
+                    }
+                }
+
+                var fn = t.GetField("PropertyName");
+                if (fn != null)
+                {
+                    return fn.GetValue(evt) as string;
+                }
+            }
+            catch (Exception ex)
+            {
+                new DebugCoreLogger().LogException(ex);
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Gets a public property or field value by name from an object.
+        /// </summary>
+        /// <param name="obj">Object to inspect.</param>
+        /// <param name="name">Member name.</param>
+        private static object GetMemberValue(object obj, string name)
+        {
+            var t = obj.GetType();
+            var prop = t.GetProperty(name, BindingFlags.Public | BindingFlags.Instance);
+            if (prop != null)
+            {
+                return prop.GetValue(obj);
+            }
+
+            var field = t.GetField(name, BindingFlags.Public | BindingFlags.Instance);
+            if (field != null)
+            {
+                return field.GetValue(obj);
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Subscribes to an IObservable&lt;T&gt; discovered via reflection and captures the disposable.
+        /// </summary>
+        /// <param name="observable">The observable instance.</param>
+        /// <param name="onNext">Action invoked for each observable notification.</param>
+        /// <param name="disposables">List to capture the returned disposable.</param>
+        private static void SubscribeObservable(object observable, Action<object> onNext, List<IDisposable> disposables)
+        {
+            if (observable == null)
+            {
+                return;
+            }
+
+            var obsType = observable.GetType();
+            var iobs = obsType.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IObservable<>));
+            if (iobs == null)
+            {
+                return;
+            }
+
+            var eventType = iobs.GetGenericArguments()[0];
+
+            var observerType = typeof(CoreObserverWrapper<>).MakeGenericType(eventType);
+            var observer = Activator.CreateInstance(observerType, onNext);
+
+            // find Subscribe method
+            var mi = obsType.GetMethods().FirstOrDefault(m => m.Name == "Subscribe" && m.GetParameters().Length == 1);
+            if (mi == null)
+            {
+                return;
+            }
+
+            try
+            {
+                var disp = mi.Invoke(observable, new object[] { observer }) as IDisposable;
+                if (disp != null)
+                {
+                    disposables.Add(disp);
+                }
+            }
+            catch (Exception ex)
+            {
+                new DebugCoreLogger().LogException(ex);
+            }
         }
 
         /// <summary>
@@ -210,7 +325,7 @@ namespace Fast.UndoRedo.ReactiveUI
                         return;
                     }
 
-                    var action = ActionFactory.CreatePropertyChangeAction(s, prop, setter, oldVal, newVal, (string)$"{s.GetType().Name}.{prop.Name} changed", this.logger);
+                    var action = ActionFactory.CreatePropertyChangeAction(s, prop, setter, oldVal, newVal, $"{s.GetType().Name}.{prop.Name} changed", this.logger);
                     if (action != null)
                     {
                         this.service.Push(action);
@@ -277,6 +392,11 @@ namespace Fast.UndoRedo.ReactiveUI
             }
         }
 
+        /// <summary>
+        /// Handle a Reactive 'Changing' notification by recording the old value in the cache.
+        /// </summary>
+        /// <param name="sender">Source object that raised the notification.</param>
+        /// <param name="evt">Event payload containing property information.</param>
         private void OnChanging(object sender, object evt)
         {
             if (sender == null || evt == null)
@@ -321,6 +441,11 @@ namespace Fast.UndoRedo.ReactiveUI
             }
         }
 
+        /// <summary>
+        /// Handle a Reactive 'Changed' notification by creating an undo action for the property change.
+        /// </summary>
+        /// <param name="sender">Source object that raised the notification.</param>
+        /// <param name="evt">Event payload containing property information.</param>
         private void OnChanged(object sender, object evt)
         {
             if (sender == null || evt == null)
@@ -368,7 +493,7 @@ namespace Fast.UndoRedo.ReactiveUI
                 return;
             }
 
-            var action = ActionFactory.CreatePropertyChangeAction(sender, prop, setter, oldVal, newVal, (string)$"{sender.GetType().Name}.{prop.Name} changed", this.logger);
+            var action = ActionFactory.CreatePropertyChangeAction(sender, prop, setter, oldVal, newVal, $"{sender.GetType().Name}.{prop.Name} changed", this.logger);
             if (action != null)
             {
                 this.service.Push(action);
@@ -387,99 +512,6 @@ namespace Fast.UndoRedo.ReactiveUI
             catch (Exception ex)
             {
                 this.logger.LogException(ex);
-            }
-        }
-
-        private static string TryGetPropertyName(object evt)
-        {
-            try
-            {
-                var t = evt.GetType();
-                var pn = t.GetProperty("PropertyName") ?? t.GetProperty("PropertyChangingEventArgs") ?? t.GetProperty("PropertyChangedEventArgs");
-                if (pn != null)
-                {
-                    var val = pn.GetValue(evt);
-                    if (val is string s)
-                    {
-                        return s;
-                    }
-
-                    var inner = val?.GetType().GetProperty("PropertyName");
-                    if (inner != null)
-                    {
-                        return inner.GetValue(val) as string;
-                    }
-                }
-
-                var fn = t.GetField("PropertyName");
-                if (fn != null)
-                {
-                    return fn.GetValue(evt) as string;
-                }
-            }
-            catch (Exception ex)
-            {
-                new DebugCoreLogger().LogException(ex);
-            }
-
-            return null;
-        }
-
-        private static object GetMemberValue(object obj, string name)
-        {
-            var t = obj.GetType();
-            var prop = t.GetProperty(name, BindingFlags.Public | BindingFlags.Instance);
-            if (prop != null)
-            {
-                return prop.GetValue(obj);
-            }
-
-            var field = t.GetField(name, BindingFlags.Public | BindingFlags.Instance);
-            if (field != null)
-            {
-                return field.GetValue(obj);
-            }
-
-            return null;
-        }
-
-        private static void SubscribeObservable(object observable, Action<object> onNext, List<IDisposable> disposables)
-        {
-            if (observable == null)
-            {
-                return;
-            }
-
-            var obsType = observable.GetType();
-            var iobs = obsType.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IObservable<>));
-            if (iobs == null)
-            {
-                return;
-            }
-
-            var eventType = iobs.GetGenericArguments()[0];
-
-            var observerType = typeof(CoreObserverWrapper<>).MakeGenericType(eventType);
-            var observer = Activator.CreateInstance(observerType, onNext);
-
-            // find Subscribe method
-            var mi = obsType.GetMethods().FirstOrDefault(m => m.Name == "Subscribe" && m.GetParameters().Length == 1);
-            if (mi == null)
-            {
-                return;
-            }
-
-            try
-            {
-                var disp = mi.Invoke(observable, new object[] { observer }) as IDisposable;
-                if (disp != null)
-                {
-                    disposables.Add(disp);
-                }
-            }
-            catch (Exception ex)
-            {
-                new DebugCoreLogger().LogException(ex);
             }
         }
     }

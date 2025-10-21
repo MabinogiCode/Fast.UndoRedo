@@ -8,8 +8,14 @@ using Xunit;
 
 namespace Fast.UndoRedo.Core.Tests
 {
+    /// <summary>
+    /// Stress tests for undo/redo service under concurrent usage.
+    /// </summary>
     public class UndoRedoStressTests
     {
+        /// <summary>
+        /// Multi-threaded stress test for undo/redo operations.
+        /// </summary>
         [Fact(Skip = "Long running stress test, enable manually when needed")]
         public void UndoRedo_MultiThreaded_StressTest()
         {

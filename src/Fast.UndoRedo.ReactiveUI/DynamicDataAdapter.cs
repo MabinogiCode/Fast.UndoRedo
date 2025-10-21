@@ -15,11 +15,20 @@ namespace Fast.UndoRedo.ReactiveUI
         private readonly UndoRedoService _service;
         private readonly ICoreLogger _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DynamicDataAdapter"/> class.
+        /// </summary>
+        /// <param name="service">The undo/redo service used to manage collection subscriptions.</param>
         public DynamicDataAdapter(UndoRedoService service)
             : this(service, null)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DynamicDataAdapter"/> class with an optional logger.
+        /// </summary>
+        /// <param name="service">The undo/redo service used to manage collection subscriptions.</param>
+        /// <param name="logger">Optional logger used for diagnostic messages.</param>
         public DynamicDataAdapter(UndoRedoService service, ICoreLogger logger)
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));
@@ -29,6 +38,7 @@ namespace Fast.UndoRedo.ReactiveUI
         /// <summary>
         /// Register a collection instance (ObservableCollection, ExtendedObservableCollection, or any INotifyCollectionChanged) with the UndoRedo service.
         /// </summary>
+        /// <param name="collection">The collection instance to attach to the undo/redo service.</param>
         public void RegisterCollection(INotifyCollectionChanged collection)
         {
             if (collection == null)

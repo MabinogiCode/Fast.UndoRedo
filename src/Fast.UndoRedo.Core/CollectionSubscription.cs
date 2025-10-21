@@ -1,12 +1,15 @@
-﻿using Fast.UndoRedo.Core.Logging;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using Fast.UndoRedo.Core.Logging;
 
 namespace Fast.UndoRedo.Core
 {
+    /// <summary>
+    /// Manages subscription to collection change events and records undo/redo actions for collections.
+    /// </summary>
     internal sealed class CollectionSubscription : IDisposable
     {
         private readonly object _collectionInstance;
@@ -18,11 +21,24 @@ namespace Fast.UndoRedo.Core
         private readonly List<object> _snapshot;
         private readonly ICoreLogger _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CollectionSubscription"/> class.
+        /// </summary>
+        /// <param name="collectionInstance">The collection instance to subscribe to.</param>
+        /// <param name="service">The undo/redo service.</param>
+        /// <param name="snapshots">Dictionary of collection snapshots.</param>
         public CollectionSubscription(object collectionInstance, UndoRedoService service, Dictionary<object, List<object>> snapshots)
             : this(collectionInstance, service, snapshots, null)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CollectionSubscription"/> class with a logger.
+        /// </summary>
+        /// <param name="collectionInstance">The collection instance to subscribe to.</param>
+        /// <param name="service">The undo/redo service.</param>
+        /// <param name="snapshots">Dictionary of collection snapshots.</param>
+        /// <param name="logger">Logger for error reporting.</param>
         public CollectionSubscription(object collectionInstance, UndoRedoService service, Dictionary<object, List<object>> snapshots, ICoreLogger logger)
         {
             _logger = logger ?? new DebugCoreLogger();
@@ -38,7 +54,6 @@ namespace Fast.UndoRedo.Core
                 elementType = collectionType.GetGenericArguments()[0];
             }
 
-            // try guess from provided snapshot or runtime items
             List<object> possibleSnap = null;
             if (snapshots != null)
             {
@@ -51,9 +66,11 @@ namespace Fast.UndoRedo.Core
             }
 
             _elementType = elementType ?? typeof(object);
-            // construct the generic action type from a concrete generic type's definition to avoid compiler issues
+
+            /* construct the generic action type from a concrete generic type's definition to avoid compiler issues */
             var genericDef = typeof(CollectionChangeAction<object>).GetGenericTypeDefinition();
             _actionType = genericDef.MakeGenericType(_elementType);
+
             // Use the external CollectionChangeType enum
             _enumType = typeof(CollectionChangeType);
 
@@ -88,42 +105,66 @@ namespace Fast.UndoRedo.Core
             _incc.CollectionChanged += OnCollectionChanged;
         }
 
+        /// <summary>
+        /// Unsubscribes from collection change events.
+        /// </summary>
+        public void Dispose()
+        {
+            try
+            {
+                _incc.CollectionChanged -= OnCollectionChanged;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogException(ex);
+            }
+        }
+
+        /// <summary>
+        /// Helper that creates and pushes an undoable action for a collection change.
+        /// Extracted from the event handler to avoid nested/local functions.
+        /// </summary>
+        private void CreateAndPush(string changeName, object itemObj = null, object oldItemObj = null, int index = -1, int toIndex = -1, IEnumerable<object> clearedItems = null, string desc = null)
+        {
+            try
+            {
+                var changeType = (CollectionChangeType)Enum.Parse(_enumType, changeName);
+
+                // Only push when not applying an undo/redo
+                if (!_service.IsApplying)
+                {
+                    var action = ActionFactory.CreateCollectionChangeAction(_collectionInstance, _elementType, changeType, itemObj, oldItemObj, index, toIndex, clearedItems, desc, _logger);
+                    if (action is IUndoableAction ua)
+                    {
+                        _service.Push(ua);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogException(ex);
+            }
+        }
+
+        /// <summary>
+        /// Handles collection changed events and records undo/redo actions.
+        /// </summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The event arguments.</param>
         private void OnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             try
             {
                 // Do NOT return when applying: we still need to update internal snapshots even when changes originate from Undo/Redo.
                 // We will only skip pushing new actions when service.IsApplying is true.
-
-                void CreateAndPush(string changeName, object itemObj = null, object oldItemObj = null, int index = -1, int toIndex = -1, IEnumerable<object> clearedItems = null, string desc = null)
-                {
-                    try
-                    {
-                        var changeType = (CollectionChangeType)Enum.Parse(_enumType, changeName);
-
-                        // Only push when not applying an undo/redo
-                        if (!_service.IsApplying)
-                        {
-                            var action = ActionFactory.CreateCollectionChangeAction(_collectionInstance, _elementType, changeType, itemObj, oldItemObj, index, toIndex, clearedItems, desc, _logger);
-                            if (action is IUndoableAction ua)
-                            {
-                                _service.Push(ua);
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogException(ex);
-                    }
-                }
-
                 switch (e.Action)
                 {
                     case NotifyCollectionChangedAction.Add:
                         if (e.NewItems != null)
                         {
                             int start = e.NewStartingIndex;
-                            // If multiple items added at once, push a single action with the list
+
+                            /* If multiple items added at once, push a single action with the list */
                             if (e.NewItems.Count > 1)
                             {
                                 var list = new List<object>();
@@ -149,6 +190,7 @@ namespace Fast.UndoRedo.Core
                                     var newItem = e.NewItems[i];
                                     int idx = start >= 0 ? start + i : -1;
                                     CreateAndPush("Add", newItem, null, idx, -1, null, $"Add {newItem}");
+
                                     // Always update snapshot so it stays in sync with actual collection
                                     _snapshot?.Insert(idx >= 0 && idx <= _snapshot.Count ? idx : _snapshot.Count, newItem);
                                 }
@@ -270,18 +312,6 @@ namespace Fast.UndoRedo.Core
                     default:
                         break;
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogException(ex);
-            }
-        }
-
-        public void Dispose()
-        {
-            try
-            {
-                _incc.CollectionChanged -= OnCollectionChanged;
             }
             catch (Exception ex)
             {

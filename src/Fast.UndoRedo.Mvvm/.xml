@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Fast.UndoRedo.Mvvm</name>
+    </assembly>
+    <members>
+        <member name="T:Fast.UndoRedo.Mvvm.MvvmAdapter">
+            <summary>
+            Lightweight adapter exposing MVVM registration helpers that use the underlying RegistrationTracker.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Mvvm.MvvmAdapter.#ctor(Fast.UndoRedo.Core.UndoRedoService)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fast.UndoRedo.Mvvm.MvvmAdapter"/> class.
+            </summary>
+            <param name="service">Undo/redo service instance.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Mvvm.MvvmAdapter.Register(System.Object)">
+            <summary>
+            Register a view-model or object for change tracking.
+            </summary>
+            <param name="vm">Object to register.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Mvvm.MvvmAdapter.Unregister(System.Object)">
+            <summary>
+            Unregister a previously registered view-model or object.
+            </summary>
+            <param name="vm">Object to unregister.</param>
+        </member>
+    </members>
+</doc>

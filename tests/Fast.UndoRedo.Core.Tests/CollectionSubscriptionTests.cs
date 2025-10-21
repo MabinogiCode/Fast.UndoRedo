@@ -6,8 +6,14 @@ using Xunit;
 
 namespace Fast.UndoRedo.Core.Tests
 {
+    /// <summary>
+    /// Tests verifying collection subscription and batch event handling behavior.
+    /// </summary>
     public class CollectionSubscriptionTests
     {
+        /// <summary>
+        /// Verifies that Replace/Move/Clear operations are recorded by the service when attached.
+        /// </summary>
         [Fact]
         public void AttachCollection_RecordsReplaceMoveClear()
         {
@@ -30,6 +36,9 @@ namespace Fast.UndoRedo.Core.Tests
             Assert.True(service.CanUndo);
         }
 
+        /// <summary>
+        /// Verifies that batched add/remove sequences are recorded properly.
+        /// </summary>
         [Fact]
         public void AttachCollection_RecordsAddRange_RemoveRange()
         {

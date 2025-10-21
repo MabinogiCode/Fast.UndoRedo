@@ -1,6 +1,24 @@
 <Project>
   <PropertyGroup>
-    <!-- Treat CS0219 (variable assigned but never used) and IDE0011 as errors project-wide -->
+    <!-- Keep specific warnings escalated to errors project-wide -->
     <WarningsAsErrors>$(WarningsAsErrors);CS0219;IDE0011</WarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Treat warnings as errors during build (CI-like behavior) -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- Warnings to treat as errors (StyleCop and documentation rules). SA1623 removed per request. -->
+    <WarningsAsErrors>CS1591;SA1600;SA1210;SA1201;SA1512;SA1515;SA1629;SA1602;SA1611;SA1615;SA1413;IDE0052</WarningsAsErrors>
+
+    <!-- Globally suppress only these specific warnings for the whole solution as requested -->
+    <NoWarn>$(NoWarn);SA1208;SA1202;SA1000;IDE0008;SA1623</NoWarn>
+
+    <!-- Enable XML documentation generation for all projects -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
+
+    <!-- Run analyzers during build so the build fails on analyzer diagnostics like in CI -->
+    <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
   </PropertyGroup>
 </Project>

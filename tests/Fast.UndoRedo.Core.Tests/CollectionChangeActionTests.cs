@@ -5,8 +5,14 @@ using System.Linq;
 
 namespace Fast.UndoRedo.Core.Tests
 {
+    /// <summary>
+    /// Tests for CollectionChangeAction behavior for add/remove/replace/move/clear operations.
+    /// </summary>
     public class CollectionChangeActionTests
     {
+        /// <summary>
+        /// Verifies Add then Remove undo/redo behavior.
+        /// </summary>
         [Fact]
         public void Add_Remove_UndoRedo_Works()
         {
@@ -21,6 +27,9 @@ namespace Fast.UndoRedo.Core.Tests
             Assert.Empty(coll);
         }
 
+        /// <summary>
+        /// Verifies Remove undo/redo.
+        /// </summary>
         [Fact]
         public void Remove_UndoRedo_Works()
         {
@@ -36,6 +45,9 @@ namespace Fast.UndoRedo.Core.Tests
             Assert.Equal("a", coll[0]);
         }
 
+        /// <summary>
+        /// Verifies Replace undo/redo.
+        /// </summary>
         [Fact]
         public void Replace_UndoRedo_Works()
         {
@@ -49,6 +61,9 @@ namespace Fast.UndoRedo.Core.Tests
             Assert.Equal("b", coll[1]);
         }
 
+        /// <summary>
+        /// Verifies Move undo/redo.
+        /// </summary>
         [Fact]
         public void Move_UndoRedo_Works()
         {
@@ -62,6 +77,9 @@ namespace Fast.UndoRedo.Core.Tests
             Assert.Equal(new[] { "a", "b", "c" }, coll.ToArray());
         }
 
+        /// <summary>
+        /// Verifies Clear undo/redo behavior.
+        /// </summary>
         [Fact]
         public void Clear_UndoRedo_Works()
         {

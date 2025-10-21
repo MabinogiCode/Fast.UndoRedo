@@ -7,8 +7,14 @@ using Xunit;
 
 namespace Fast.UndoRedo.Core.Tests
 {
+    /// <summary>
+    /// Tests for collection-related action factory behavior (add/remove/replace/move/clear).
+    /// </summary>
     public class ActionFactoryCollectionTests
     {
+        /// <summary>
+        /// Verifies that CreateCollectionChangeAction produces an Add action that modifies the collection.
+        /// </summary>
         [Fact]
         public void Factory_CreatesAddAction()
         {
@@ -24,6 +30,9 @@ namespace Fast.UndoRedo.Core.Tests
             Assert.Empty(coll);
         }
 
+        /// <summary>
+        /// Verifies Remove action behaviour.
+        /// </summary>
         [Fact]
         public void Factory_CreatesRemoveAction()
         {
@@ -40,6 +49,9 @@ namespace Fast.UndoRedo.Core.Tests
             Assert.Equal("a", coll[0]);
         }
 
+        /// <summary>
+        /// Verifies replace/move/clear composite scenarios.
+        /// </summary>
         [Fact]
         public void Factory_CreatesReplace_Move_Clear()
         {

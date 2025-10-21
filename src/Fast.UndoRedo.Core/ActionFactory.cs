@@ -1,18 +1,32 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Fast.UndoRedo.Core.Logging;
-using System.Linq;
-using System.Collections.Generic;
 
 namespace Fast.UndoRedo.Core
 {
+    /// <summary>
+    /// Provides factory methods for creating undo/redo actions.
+    /// </summary>
     public static class ActionFactory
     {
         private static readonly ConcurrentDictionary<string, Func<object, object, object, object, string, IUndoableAction>> _propCtorCache = new ConcurrentDictionary<string, Func<object, object, object, object, string, IUndoableAction>>();
         private static readonly ConcurrentDictionary<string, Func<object, CollectionChangeType, object, object, int, int, IEnumerable<object>, string, IUndoableAction>> _collectionCtorCache = new ConcurrentDictionary<string, Func<object, CollectionChangeType, object, object, int, int, IEnumerable<object>, string, IUndoableAction>>();
 
+        /// <summary>
+        /// Creates an undoable action for a property change.
+        /// </summary>
+        /// <param name="target">The target object whose property is changing.</param>
+        /// <param name="prop">The property information.</param>
+        /// <param name="setterDelegate">The delegate to set the property value.</param>
+        /// <param name="oldValue">The old value of the property.</param>
+        /// <param name="newValue">The new value of the property.</param>
+        /// <param name="description">A description of the action.</param>
+        /// <param name="logger">The logger for error reporting.</param>
+        /// <returns>The created undoable action, or null if creation failed.</returns>
         public static IUndoableAction CreatePropertyChangeAction(object target, PropertyInfo prop, object setterDelegate, object oldValue, object newValue, string description, ICoreLogger logger = null)
         {
             if (target == null || prop == null)
@@ -26,6 +40,41 @@ namespace Fast.UndoRedo.Core
             try
             {
                 return ctor(target, setterDelegate, oldValue, newValue, description ?? string.Empty);
+            }
+            catch (Exception ex)
+            {
+                logger?.LogException(ex);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Creates an undoable action for a collection change.
+        /// </summary>
+        /// <param name="collectionInstance">The collection instance.</param>
+        /// <param name="elementType">The type of elements in the collection.</param>
+        /// <param name="changeType">The type of collection change.</param>
+        /// <param name="itemObj">The item involved in the change.</param>
+        /// <param name="oldItemObj">The old item for replace operations.</param>
+        /// <param name="index">The index of the change.</param>
+        /// <param name="toIndex">The target index for move operations.</param>
+        /// <param name="clearedItems">The items cleared in a clear operation.</param>
+        /// <param name="description">A description of the action.</param>
+        /// <param name="logger">The logger for error reporting.</param>
+        /// <returns>The created undoable action, or null if creation failed.</returns>
+        public static IUndoableAction CreateCollectionChangeAction(object collectionInstance, Type elementType, CollectionChangeType changeType, object itemObj, object oldItemObj, int index, int toIndex, IEnumerable<object> clearedItems, string description, ICoreLogger logger = null)
+        {
+            if (collectionInstance == null || elementType == null)
+            {
+                return null;
+            }
+
+            var key = collectionInstance.GetType().FullName + "|" + elementType.FullName;
+            var ctor = _collectionCtorCache.GetOrAdd(key, k => BuildCollectionCtor(collectionInstance.GetType(), elementType));
+
+            try
+            {
+                return ctor(collectionInstance, changeType, itemObj, oldItemObj, index, toIndex, clearedItems, description ?? string.Empty);
             }
             catch (Exception ex)
             {
@@ -70,28 +119,6 @@ namespace Fast.UndoRedo.Core
 
             var lambda = Expression.Lambda<Func<object, object, object, object, string, IUndoableAction>>(castToIUndo, targetParam, setterParam, oldParam, newParam, descParam);
             return lambda.Compile();
-        }
-
-        // Collection factory
-        public static IUndoableAction CreateCollectionChangeAction(object collectionInstance, Type elementType, CollectionChangeType changeType, object itemObj, object oldItemObj, int index, int toIndex, IEnumerable<object> clearedItems, string description, ICoreLogger logger = null)
-        {
-            if (collectionInstance == null || elementType == null)
-            {
-                return null;
-            }
-
-            var key = collectionInstance.GetType().FullName + "|" + elementType.FullName;
-            var ctor = _collectionCtorCache.GetOrAdd(key, k => BuildCollectionCtor(collectionInstance.GetType(), elementType));
-
-            try
-            {
-                return ctor(collectionInstance, changeType, itemObj, oldItemObj, index, toIndex, clearedItems, description ?? string.Empty);
-            }
-            catch (Exception ex)
-            {
-                logger?.LogException(ex);
-                return null;
-            }
         }
 
         private static Func<object, CollectionChangeType, object, object, int, int, IEnumerable<object>, string, IUndoableAction> BuildCollectionCtor(Type collectionRuntimeType, Type elementType)

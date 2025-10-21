@@ -7,8 +7,19 @@ using Fast.UndoRedo.Core.Logging;
 
 namespace Fast.UndoRedo.Core
 {
+    /// <summary>
+    /// Provides methods to register objects for property change undo/redo tracking.
+    /// </summary>
     internal static class PropertyChangeRegistrar
     {
+        /// <summary>
+        /// Registers an object for property change undo/redo tracking by subscribing to property change events.
+        /// </summary>
+        /// <param name="target">The target object to register.</param>
+        /// <param name="service">The UndoRedoService instance.</param>
+        /// <param name="valueCache">The cache for storing old property values.</param>
+        /// <param name="logger">The logger for error reporting.</param>
+        /// <returns>An IDisposable to unsubscribe the registrations.</returns>
         public static IDisposable Register(object target, UndoRedoService service, ConditionalWeakTable<object, Dictionary<string, object>> valueCache, ICoreLogger logger)
         {
             if (target == null || service == null || valueCache == null)
@@ -43,6 +54,7 @@ namespace Fast.UndoRedo.Core
                         if (!valueCache.TryGetValue(s, out var cache))
                         {
                             cache = new Dictionary<string, object>();
+
                             // add the cache for this instance
                             valueCache.Add(s, cache);
                         }

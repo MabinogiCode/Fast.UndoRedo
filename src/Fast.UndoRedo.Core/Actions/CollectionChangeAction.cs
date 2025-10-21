@@ -19,9 +19,6 @@ namespace Fast.UndoRedo.Core
         private readonly int _toIndex;
         private readonly CollectionChangeType _type;
 
-        /// <inheritdoc />
-        public string Description { get; }
-
         /// <summary>
         /// Initializes a new instance of the <see cref="CollectionChangeAction{T}"/> class.
         /// </summary>
@@ -44,6 +41,9 @@ namespace Fast.UndoRedo.Core
             _clearedItems = clearedItems != null ? new List<T>(clearedItems) : null;
             Description = description ?? $"Collection change: {_type}";
         }
+
+        /// <inheritdoc />
+        public string Description { get; }
 
         /// <inheritdoc />
         public void Undo()

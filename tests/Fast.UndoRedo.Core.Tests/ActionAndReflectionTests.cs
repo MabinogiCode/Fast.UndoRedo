@@ -5,6 +5,9 @@ using Xunit;
 
 namespace Fast.UndoRedo.Core.Tests
 {
+    /// <summary>
+    /// Tests covering reflection helpers and property-action behaviour used by the core.
+    /// </summary>
     public class ActionAndReflectionTests
     {
         private class Person
@@ -14,6 +17,9 @@ namespace Fast.UndoRedo.Core.Tests
             public string PrivateSet { get; private set; } = "priv";
         }
 
+        /// <summary>
+        /// Verifies that a setter delegate can be created and applied to set a property value.
+        /// </summary>
         [Fact]
         public void ReflectionHelpers_CreateSetter_AllowsSettingValue()
         {
@@ -29,6 +35,9 @@ namespace Fast.UndoRedo.Core.Tests
             Assert.Equal("new", p.Name);
         }
 
+        /// <summary>
+        /// Verifies that read-only properties yield a null setter.
+        /// </summary>
         [Fact]
         public void ReflectionHelpers_CreateSetter_NullForReadOnly()
         {
@@ -37,6 +46,9 @@ namespace Fast.UndoRedo.Core.Tests
             Assert.Null(setterObj);
         }
 
+        /// <summary>
+        /// Verifies that private setters can be accessed via reflection helper.
+        /// </summary>
         [Fact]
         public void ReflectionHelpers_CreateSetter_PrivateSetter_Works()
         {
@@ -54,6 +66,9 @@ namespace Fast.UndoRedo.Core.Tests
             Assert.Equal("changed", v);
         }
 
+        /// <summary>
+        /// Ensures PropertyChangeAction applies Undo/Redo values correctly.
+        /// </summary>
         [Fact]
         public void PropertyChangeAction_UndoRedo_AppliesValues()
         {
@@ -70,6 +85,9 @@ namespace Fast.UndoRedo.Core.Tests
             Assert.Equal("old", p.Name);
         }
 
+        /// <summary>
+        /// Validates constructor argument checks for PropertyChangeAction.
+        /// </summary>
         [Fact]
         public void PropertyChangeAction_Constructor_ValidatesArgs()
         {
@@ -78,6 +96,9 @@ namespace Fast.UndoRedo.Core.Tests
             Assert.Throws<ArgumentNullException>(() => new PropertyChangeAction<Person, string>(new Person(), null, "old", "new"));
         }
 
+        /// <summary>
+        /// Ensures ActionFactory creates a working property-change action from reflection-based setter.
+        /// </summary>
         [Fact]
         public void ActionFactory_CreatesPropertyAction_AndApplies()
         {

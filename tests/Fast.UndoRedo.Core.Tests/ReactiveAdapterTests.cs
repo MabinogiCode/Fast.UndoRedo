@@ -9,6 +9,9 @@ using Xunit;
 
 namespace Fast.UndoRedo.Core.Tests
 {
+    /// <summary>
+    /// Tests verifying ReactiveAdapter behavior and concurrency characteristics.
+    /// </summary>
     public class ReactiveAdapterTests
     {
         private class DummyReactive : INotifyPropertyChanged, INotifyPropertyChanging
@@ -37,6 +40,9 @@ namespace Fast.UndoRedo.Core.Tests
             }
         }
 
+        /// <summary>
+        /// Verifies that ReactiveAdapter records changes when observables are used.
+        /// </summary>
         [Fact]
         public void ReactiveAdapter_RecordsPropertyChanges_FromObservables()
         {
@@ -50,6 +56,9 @@ namespace Fast.UndoRedo.Core.Tests
             Assert.True(service.CanUndo);
         }
 
+        /// <summary>
+        /// Verifies that ReactiveAdapter falls back to INotifyPropertyChanged path when observables are not subscribed.
+        /// </summary>
         [Fact]
         public void ReactiveAdapter_Fallback_INotifyPropertyChanged()
         {
@@ -65,6 +74,9 @@ namespace Fast.UndoRedo.Core.Tests
             Assert.True(service.CanUndo);
         }
 
+        /// <summary>
+        /// Ensures Unregister allows garbage collection of reactive objects.
+        /// </summary>
         [Fact]
         public void Unregister_AllowsGarbageCollection_ForReactiveObject()
         {
@@ -91,6 +103,9 @@ namespace Fast.UndoRedo.Core.Tests
             return wr;
         }
 
+        /// <summary>
+        /// Validates concurrent register/unregister operations do not throw or corrupt state.
+        /// </summary>
         [Fact]
         public void Concurrent_RegisterUnregister_DoesNotThrowOrCorruptState()
         {

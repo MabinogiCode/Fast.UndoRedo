@@ -7,8 +7,14 @@ using Xunit;
 
 namespace Fast.UndoRedo.Core.Tests
 {
+    /// <summary>
+    /// Miscellaneous unit tests covering general service behavior and helpers.
+    /// </summary>
     public class MoreTests
     {
+        /// <summary>
+        /// Ensure calling Undo/Redo on an empty service does not throw and push(null) is ignored.
+        /// </summary>
         [Fact]
         public void UndoRedoService_NoThrowOnEmptyUndoRedo()
         {
@@ -24,6 +30,9 @@ namespace Fast.UndoRedo.Core.Tests
             Assert.False(svc.CanRedo);
         }
 
+        /// <summary>
+        /// Clearing the service removes items from undo/redo stacks.
+        /// </summary>
         [Fact]
         public void UndoRedoService_Clear_ClearsStacks()
         {
@@ -36,6 +45,9 @@ namespace Fast.UndoRedo.Core.Tests
             Assert.False(svc.CanRedo);
         }
 
+        /// <summary>
+        /// Subscribing observers receives initial state and subsequent updates.
+        /// </summary>
         [Fact]
         public void Subscribe_ObserverReceivesInitialAndUpdates()
         {
@@ -51,6 +63,9 @@ namespace Fast.UndoRedo.Core.Tests
             }
         }
 
+        /// <summary>
+        /// Registering then unregistering stops recording property changes.
+        /// </summary>
         [Fact]
         public void RegistrationTracker_UnregisterStopsRecording()
         {
@@ -67,6 +82,9 @@ namespace Fast.UndoRedo.Core.Tests
             Assert.Equal(before, svc.CanUndo);
         }
 
+        /// <summary>
+        /// Nested registration records changes on nested child objects.
+        /// </summary>
         [Fact]
         public void RegistrationTracker_NestedRegistration_RecordsNestedChanges()
         {
@@ -78,6 +96,9 @@ namespace Fast.UndoRedo.Core.Tests
             Assert.True(svc.CanUndo);
         }
 
+        /// <summary>
+        /// Verifies ReactiveAdapter registers/unregisters and records observable changes.
+        /// </summary>
         [Fact]
         public void ReactiveAdapter_Unregister_RemovesSubscriptions()
         {
@@ -94,11 +115,14 @@ namespace Fast.UndoRedo.Core.Tests
             Assert.Equal(before, svc.CanUndo);
         }
 
+        /// <summary>
+        /// Ensures CoreObserverWrapper invokes the provided action and swallows exceptions.
+        /// </summary>
         [Fact]
         public void CoreObserverWrapper_OnNext_InvokesActionAndIgnoresExceptions()
         {
             int called = 0;
-            var wrapper = new CoreObserverWrapper<string>(o => { called++; if (o == "boom") throw new Exception("err"); });
+            var wrapper = new CoreObserverWrapper<string>(o => { called++; if (o is string s && s == "boom") throw new Exception("err"); });
             wrapper.OnNext("ok");
             Assert.Equal(1, called);
             // exception inside should be swallowed

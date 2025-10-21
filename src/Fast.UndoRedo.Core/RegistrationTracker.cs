@@ -14,7 +14,7 @@ namespace Fast.UndoRedo.Core
     /// Registers property change and collection change handlers and caches values for undo/redo.
     /// Improvements applied to follow best practices:
     /// - use ConditionalWeakTable for registrations and value cache to avoid keeping strong references to tracked objects (prevents memory leaks)
-    /// - tighten null checks and reduce repeated dictionary-style indexing
+    /// - tighten null checks and reduce repeated dictionary-style indexing.
     /// </summary>
     public class RegistrationTracker
     {
@@ -41,6 +41,8 @@ namespace Fast.UndoRedo.Core
         /// <summary>
         /// Initializes a new instance of the <see cref="RegistrationTracker"/> class with a logger.
         /// </summary>
+        /// <param name="service">Service used to push undoable actions.</param>
+        /// <param name="logger">Logger for error reporting.</param>
         public RegistrationTracker(UndoRedoService service, ICoreLogger logger)
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));

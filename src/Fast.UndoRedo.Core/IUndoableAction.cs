@@ -7,6 +7,11 @@
     public interface IUndoableAction
     {
         /// <summary>
+        /// Gets a short human-readable description of the action.
+        /// </summary>
+        string Description { get; }
+
+        /// <summary>
         /// Reverts the action.
         /// </summary>
         void Undo();
@@ -15,10 +20,5 @@
         /// Reapplies the action after an undo.
         /// </summary>
         void Redo();
-
-        /// <summary>
-        /// A short human-readable description of the action.
-        /// </summary>
-        string Description { get; }
     }
 }

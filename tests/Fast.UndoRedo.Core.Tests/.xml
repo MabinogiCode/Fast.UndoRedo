@@ -1,0 +1,243 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Fast.UndoRedo.Core.Tests</name>
+    </assembly>
+    <members>
+        <member name="T:Fast.UndoRedo.Core.Tests.ActionAndReflectionTests">
+            <summary>
+            Tests covering reflection helpers and property-action behaviour used by the core.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.ActionAndReflectionTests.ReflectionHelpers_CreateSetter_AllowsSettingValue">
+            <summary>
+            Verifies that a setter delegate can be created and applied to set a property value.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.ActionAndReflectionTests.ReflectionHelpers_CreateSetter_NullForReadOnly">
+            <summary>
+            Verifies that read-only properties yield a null setter.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.ActionAndReflectionTests.ReflectionHelpers_CreateSetter_PrivateSetter_Works">
+            <summary>
+            Verifies that private setters can be accessed via reflection helper.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.ActionAndReflectionTests.PropertyChangeAction_UndoRedo_AppliesValues">
+            <summary>
+            Ensures PropertyChangeAction applies Undo/Redo values correctly.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.ActionAndReflectionTests.PropertyChangeAction_Constructor_ValidatesArgs">
+            <summary>
+            Validates constructor argument checks for PropertyChangeAction.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.ActionAndReflectionTests.ActionFactory_CreatesPropertyAction_AndApplies">
+            <summary>
+            Ensures ActionFactory creates a working property-change action from reflection-based setter.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.ActionFactoryCollectionTests">
+            <summary>
+            Tests for collection-related action factory behavior (add/remove/replace/move/clear).
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.ActionFactoryCollectionTests.Factory_CreatesAddAction">
+            <summary>
+            Verifies that CreateCollectionChangeAction produces an Add action that modifies the collection.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.ActionFactoryCollectionTests.Factory_CreatesRemoveAction">
+            <summary>
+            Verifies Remove action behaviour.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.ActionFactoryCollectionTests.Factory_CreatesReplace_Move_Clear">
+            <summary>
+            Verifies replace/move/clear composite scenarios.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.CollectionChangeActionTests">
+            <summary>
+            Tests for CollectionChangeAction behavior for add/remove/replace/move/clear operations.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.CollectionChangeActionTests.Add_Remove_UndoRedo_Works">
+            <summary>
+            Verifies Add then Remove undo/redo behavior.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.CollectionChangeActionTests.Remove_UndoRedo_Works">
+            <summary>
+            Verifies Remove undo/redo.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.CollectionChangeActionTests.Replace_UndoRedo_Works">
+            <summary>
+            Verifies Replace undo/redo.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.CollectionChangeActionTests.Move_UndoRedo_Works">
+            <summary>
+            Verifies Move undo/redo.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.CollectionChangeActionTests.Clear_UndoRedo_Works">
+            <summary>
+            Verifies Clear undo/redo behavior.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.CollectionSubscriptionTests">
+            <summary>
+            Tests verifying collection subscription and batch event handling behavior.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.CollectionSubscriptionTests.AttachCollection_RecordsReplaceMoveClear">
+            <summary>
+            Verifies that Replace/Move/Clear operations are recorded by the service when attached.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.CollectionSubscriptionTests.AttachCollection_RecordsAddRange_RemoveRange">
+            <summary>
+            Verifies that batched add/remove sequences are recorded properly.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.IntegrationTests">
+            <summary>
+            Integration tests that exercise end-to-end attach/change/undo-redo scenarios.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.IntegrationTests.EndToEnd_Attach_Change_UndoRedo_VerifyState">
+            <summary>
+            Full end-to-end scenario: attach view model and collection, perform changes and verify undo/redo restores state.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.MemoryLeakTests">
+            <summary>
+            Tests ensuring tracked objects are unregistered correctly and can be garbage-collected.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.MemoryLeakTests.Register_Unregister_AllowsGarbageCollection_ForTrackedObject">
+            <summary>
+            Verifies that registering and then unregistering an object allows it to be collected by the GC.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.MemoryLeakTests.Register_MultipleThreads_NoRaceOnCollectionSnapshots">
+            <summary>
+            Verifies there are no race conditions when registering/unregistering from multiple threads and taking collection snapshots.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.MemoryStressTests">
+            <summary>
+            Stress tests related to memory and repeated register/unregister operations.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.MemoryStressTests.RegisterUnregister_LargeLoop_DoesNotLeak">
+            <summary>
+            Long running stress test that verifies many register/unregister cycles do not leak memory. Skipped by default.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.MoreTests">
+            <summary>
+            Miscellaneous unit tests covering general service behavior and helpers.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.MoreTests.UndoRedoService_NoThrowOnEmptyUndoRedo">
+            <summary>
+            Ensure calling Undo/Redo on an empty service does not throw and push(null) is ignored.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.MoreTests.UndoRedoService_Clear_ClearsStacks">
+            <summary>
+            Clearing the service removes items from undo/redo stacks.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.MoreTests.Subscribe_ObserverReceivesInitialAndUpdates">
+            <summary>
+            Subscribing observers receives initial state and subsequent updates.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.MoreTests.RegistrationTracker_UnregisterStopsRecording">
+            <summary>
+            Registering then unregistering stops recording property changes.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.MoreTests.RegistrationTracker_NestedRegistration_RecordsNestedChanges">
+            <summary>
+            Nested registration records changes on nested child objects.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.MoreTests.ReactiveAdapter_Unregister_RemovesSubscriptions">
+            <summary>
+            Verifies ReactiveAdapter registers/unregisters and records observable changes.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.MoreTests.CoreObserverWrapper_OnNext_InvokesActionAndIgnoresExceptions">
+            <summary>
+            Ensures CoreObserverWrapper invokes the provided action and swallows exceptions.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.ReactiveAdapterTests">
+            <summary>
+            Tests verifying ReactiveAdapter behavior and concurrency characteristics.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.ReactiveAdapterTests.ReactiveAdapter_RecordsPropertyChanges_FromObservables">
+            <summary>
+            Verifies that ReactiveAdapter records changes when observables are used.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.ReactiveAdapterTests.ReactiveAdapter_Fallback_INotifyPropertyChanged">
+            <summary>
+            Verifies that ReactiveAdapter falls back to INotifyPropertyChanged path when observables are not subscribed.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.ReactiveAdapterTests.Unregister_AllowsGarbageCollection_ForReactiveObject">
+            <summary>
+            Ensures Unregister allows garbage collection of reactive objects.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.ReactiveAdapterTests.Concurrent_RegisterUnregister_DoesNotThrowOrCorruptState">
+            <summary>
+            Validates concurrent register/unregister operations do not throw or corrupt state.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.RegistrationTrackerTests">
+            <summary>
+            Tests for registration tracker behavior when recording property changes on registered objects.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.RegistrationTrackerTests.Register_RecordsPropertyChange">
+            <summary>
+            Verifies that Register records property changes into the undo/redo service.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.UndoRedoServiceTests">
+            <summary>
+            Tests for UndoRedoService basic push/undo/redo and collection attachment behaviors.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.UndoRedoServiceTests.PushUndoRedo_WorksForSimpleAction">
+            <summary>
+            Basic push/undo/redo functionality for a simple action.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.UndoRedoServiceTests.AttachCollection_RecordsAddRemove">
+            <summary>
+            Verifies that attaching a collection records add/remove operations.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.UndoRedoStressTests">
+            <summary>
+            Stress tests for undo/redo service under concurrent usage.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.UndoRedoStressTests.UndoRedo_MultiThreaded_StressTest">
+            <summary>
+            Multi-threaded stress test for undo/redo operations.
+            </summary>
+        </member>
+    </members>
+</doc>

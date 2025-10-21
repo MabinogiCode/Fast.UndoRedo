@@ -4,8 +4,14 @@ using Xunit;
 
 namespace Fast.UndoRedo.Core.Tests
 {
+    /// <summary>
+    /// Tests for UndoRedoService basic push/undo/redo and collection attachment behaviors.
+    /// </summary>
     public class UndoRedoServiceTests
     {
+        /// <summary>
+        /// Basic push/undo/redo functionality for a simple action.
+        /// </summary>
         [Fact]
         public void PushUndoRedo_WorksForSimpleAction()
         {
@@ -28,6 +34,9 @@ namespace Fast.UndoRedo.Core.Tests
             Assert.True(service.CanUndo);
         }
 
+        /// <summary>
+        /// Verifies that attaching a collection records add/remove operations.
+        /// </summary>
         [Fact]
         public void AttachCollection_RecordsAddRemove()
         {

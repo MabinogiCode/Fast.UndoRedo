@@ -1,0 +1,99 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Sample.WPF</name>
+    </assembly>
+    <members>
+        <member name="T:Sample.WPF.App">
+            <summary>
+            WPF application entry class for the sample application.
+            </summary>
+        </member>
+        <member name="M:Sample.WPF.App.Main">
+            <summary>
+            Application entry point.
+            </summary>
+        </member>
+        <member name="T:Sample.WPF.MainWindow">
+            <summary>
+            Main window for the sample WPF application demonstrating undo/redo functionality.
+            </summary>
+        </member>
+        <member name="M:Sample.WPF.MainWindow.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:Sample.WPF.MainWindow"/> class.
+            </summary>
+        </member>
+        <member name="M:Sample.WPF.MainWindow.MainWindow_KeyDown(System.Object,System.Windows.Input.KeyEventArgs)">
+            <summary>
+            Handle key down events for undo/redo keyboard shortcuts.
+            </summary>
+        </member>
+        <member name="M:Sample.WPF.MainWindow.BuildUi">
+            <summary>
+            Builds the UI elements for the sample window.
+            </summary>
+        </member>
+        <member name="T:Sample.WPF.SampleViewModel">
+            <summary>
+            Example view model used by the sample WPF application.
+            Demonstrates property notifications and use of UndoableCollection.
+            </summary>
+        </member>
+        <member name="M:Sample.WPF.SampleViewModel.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:Sample.WPF.SampleViewModel"/> class.
+            </summary>
+        </member>
+        <member name="E:Sample.WPF.SampleViewModel.PropertyChanged">
+            <inheritdoc />
+        </member>
+        <member name="E:Sample.WPF.SampleViewModel.PropertyChanging">
+            <inheritdoc />
+        </member>
+        <member name="P:Sample.WPF.SampleViewModel.Items">
+            <summary>
+            Items collection that records changes.
+            Uses ObservableCollection so it can be attached to UndoRedoService externally.
+            </summary>
+        </member>
+        <member name="P:Sample.WPF.SampleViewModel.TextField">
+            <summary>
+            Sample text field property.
+            </summary>
+        </member>
+        <member name="P:Sample.WPF.SampleViewModel.IsChecked">
+            <summary>
+            Sample checkbox property.
+            </summary>
+        </member>
+        <member name="P:Sample.WPF.SampleViewModel.SelectedItem">
+            <summary>
+            Selected item (ignored by undo tracking via attribute).
+            </summary>
+        </member>
+        <member name="M:Sample.WPF.SampleViewModel.AddItem(System.String)">
+            <summary>
+            Add a new item to the collection.
+            </summary>
+            <param name="text">Item text.</param>
+        </member>
+        <member name="M:Sample.WPF.SampleViewModel.RemoveSelected">
+            <summary>
+            Remove the selected item from the collection.
+            </summary>
+        </member>
+        <member name="M:Sample.WPF.SampleViewModel.OnPropertyChanged(System.String)">
+            <summary>
+            Raises the PropertyChanged event.
+            </summary>
+            <param name="name">Property name.</param>
+        </member>
+        <member name="M:Sample.WPF.SampleViewModel.OnPropertyChanging(System.String)">
+            <summary>
+            Raises the PropertyChanging event.
+            </summary>
+            <param name="name">Property name.</param>
+        </member>
+    </members>
+</doc>

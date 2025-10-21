@@ -1,0 +1,101 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Fast.UndoRedo.ReactiveUI</name>
+    </assembly>
+    <members>
+        <member name="T:Fast.UndoRedo.ReactiveUI.DynamicDataAdapter">
+            <summary>
+            Adapter helper for DynamicData/ExtendedObservableCollection scenarios.
+            For existing collections that implement INotifyCollectionChanged this will attach the collection to the given service.
+            DynamicData change sets typically result in NotifyCollectionChanged events with multiple items which are handled by CollectionSubscription.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.ReactiveUI.DynamicDataAdapter.#ctor(Fast.UndoRedo.Core.UndoRedoService)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fast.UndoRedo.ReactiveUI.DynamicDataAdapter"/> class.
+            </summary>
+            <param name="service">The undo/redo service used to manage collection subscriptions.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.ReactiveUI.DynamicDataAdapter.#ctor(Fast.UndoRedo.Core.UndoRedoService,Fast.UndoRedo.Core.Logging.ICoreLogger)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fast.UndoRedo.ReactiveUI.DynamicDataAdapter"/> class with an optional logger.
+            </summary>
+            <param name="service">The undo/redo service used to manage collection subscriptions.</param>
+            <param name="logger">Optional logger used for diagnostic messages.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.ReactiveUI.DynamicDataAdapter.RegisterCollection(System.Collections.Specialized.INotifyCollectionChanged)">
+            <summary>
+            Register a collection instance (ObservableCollection, ExtendedObservableCollection, or any INotifyCollectionChanged) with the UndoRedo service.
+            </summary>
+            <param name="collection">The collection instance to attach to the undo/redo service.</param>
+        </member>
+        <member name="T:Fast.UndoRedo.ReactiveUI.ReactiveAdapter">
+            <summary>
+            Adapter that integrates Reactive-style observable property change events with the UndoRedo core.
+            It supports subscribing to ReactiveUI-style Changing/Changed observables as well as INotifyPropertyChanged/Changing.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.ReactiveUI.ReactiveAdapter.#ctor(Fast.UndoRedo.Core.UndoRedoService)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fast.UndoRedo.ReactiveUI.ReactiveAdapter"/> class.
+            </summary>
+            <param name="service">The undo/redo service used to push recorded actions.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.ReactiveUI.ReactiveAdapter.#ctor(Fast.UndoRedo.Core.UndoRedoService,Fast.UndoRedo.Core.Logging.ICoreLogger)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fast.UndoRedo.ReactiveUI.ReactiveAdapter"/> class with an optional logger.
+            </summary>
+            <param name="service">The undo/redo service used to push recorded actions.</param>
+            <param name="logger">Optional logger used by the adapter for diagnostics.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.ReactiveUI.ReactiveAdapter.TryGetPropertyName(System.Object)">
+            <summary>
+            Tries to extract a property name from a Reactive-style event object.
+            </summary>
+            <param name="evt">The event object published by the observable.</param>
+            <returns>The property name if found; otherwise null.</returns>
+        </member>
+        <member name="M:Fast.UndoRedo.ReactiveUI.ReactiveAdapter.GetMemberValue(System.Object,System.String)">
+            <summary>
+            Gets a public property or field value by name from an object.
+            </summary>
+            <param name="obj">Object to inspect.</param>
+            <param name="name">Member name.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.ReactiveUI.ReactiveAdapter.SubscribeObservable(System.Object,System.Action{System.Object},System.Collections.Generic.List{System.IDisposable})">
+            <summary>
+            Subscribes to an IObservable&lt;T&gt; discovered via reflection and captures the disposable.
+            </summary>
+            <param name="observable">The observable instance.</param>
+            <param name="onNext">Action invoked for each observable notification.</param>
+            <param name="disposables">List to capture the returned disposable.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.ReactiveUI.ReactiveAdapter.Register(System.Object)">
+            <summary>
+            Register a Reactive or INotify object to have its property changes recorded.
+            </summary>
+            <param name="reactiveObject">Object implementing Reactive observables or INotifyPropertyChanged/Changing.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.ReactiveUI.ReactiveAdapter.Unregister(System.Object)">
+            <summary>
+            Unregister a previously registered object and dispose its subscriptions.
+            </summary>
+            <param name="reactiveObject">Registered object to unregister.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.ReactiveUI.ReactiveAdapter.OnChanging(System.Object,System.Object)">
+            <summary>
+            Handle a Reactive 'Changing' notification by recording the old value in the cache.
+            </summary>
+            <param name="sender">Source object that raised the notification.</param>
+            <param name="evt">Event payload containing property information.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.ReactiveUI.ReactiveAdapter.OnChanged(System.Object,System.Object)">
+            <summary>
+            Handle a Reactive 'Changed' notification by creating an undo action for the property change.
+            </summary>
+            <param name="sender">Source object that raised the notification.</param>
+            <param name="evt">Event payload containing property information.</param>
+        </member>
+    </members>
+</doc>

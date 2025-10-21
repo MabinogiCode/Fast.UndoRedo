@@ -4,6 +4,9 @@ using Xunit;
 
 namespace Fast.UndoRedo.Core.Tests
 {
+    /// <summary>
+    /// Tests for registration tracker behavior when recording property changes on registered objects.
+    /// </summary>
     public class RegistrationTrackerTests
     {
         private class Dummy : INotifyPropertyChanged, INotifyPropertyChanging
@@ -24,6 +27,9 @@ namespace Fast.UndoRedo.Core.Tests
             }
         }
 
+        /// <summary>
+        /// Verifies that Register records property changes into the undo/redo service.
+        /// </summary>
         [Fact]
         public void Register_RecordsPropertyChange()
         {

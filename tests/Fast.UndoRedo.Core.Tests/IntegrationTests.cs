@@ -6,8 +6,14 @@ using Xunit;
 
 namespace Fast.UndoRedo.Core.Tests
 {
+    /// <summary>
+    /// Integration tests that exercise end-to-end attach/change/undo-redo scenarios.
+    /// </summary>
     public class IntegrationTests
     {
+        /// <summary>
+        /// Full end-to-end scenario: attach view model and collection, perform changes and verify undo/redo restores state.
+        /// </summary>
         [Fact]
         public void EndToEnd_Attach_Change_UndoRedo_VerifyState()
         {

@@ -5,14 +5,29 @@ using Fast.UndoRedo.Core.Logging;
 
 namespace Fast.UndoRedo.Core
 {
+    /// <summary>
+    /// Provides helper methods for reflection operations used in the undo/redo system.
+    /// </summary>
     public static class ReflectionHelpers
     {
-        // Build Action<TTarget, TValue> dynamically using expression trees.
+        /// <summary>
+        /// Creates a setter action for a property.
+        /// </summary>
+        /// <param name="targetType">The type of the target object.</param>
+        /// <param name="prop">The property information.</param>
+        /// <returns>The compiled setter action, or null if creation failed.</returns>
         public static object CreateSetter(Type targetType, PropertyInfo prop)
         {
             return CreateSetter(targetType, prop, null);
         }
 
+        /// <summary>
+        /// Creates a setter action for a property.
+        /// </summary>
+        /// <param name="targetType">The type of the target object.</param>
+        /// <param name="prop">The property information.</param>
+        /// <param name="logger">The logger for error reporting.</param>
+        /// <returns>The compiled setter action, or null if creation failed.</returns>
         public static object CreateSetter(Type targetType, PropertyInfo prop, ICoreLogger logger)
         {
             try

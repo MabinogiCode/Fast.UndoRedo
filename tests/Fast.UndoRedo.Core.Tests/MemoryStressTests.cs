@@ -7,8 +7,14 @@ using Xunit;
 
 namespace Fast.UndoRedo.Core.Tests
 {
+    /// <summary>
+    /// Stress tests related to memory and repeated register/unregister operations.
+    /// </summary>
     public class MemoryStressTests
     {
+        /// <summary>
+        /// Long running stress test that verifies many register/unregister cycles do not leak memory. Skipped by default.
+        /// </summary>
         [Fact(Skip = "Long running stress test, enable manually when needed")]
         public void RegisterUnregister_LargeLoop_DoesNotLeak()
         {
