@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/.tools/.store/dotnet-format/5.1.225507
+/.tools/.store/dotnet-format/5.1.225507/dotnet-format/5.1.225507
+/.tools/.store/dotnet-format/5.1.225507/project.assets.json
+/.tools/dotnet-format.exe

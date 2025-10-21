@@ -1,4 +1,4 @@
-namespace Fast.UndoRedo.Core
+﻿namespace Fast.UndoRedo.Core
 {
     using System;
 

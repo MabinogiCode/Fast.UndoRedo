@@ -1,4 +1,4 @@
-using Fast.UndoRedo.Core.Logging;
+﻿using Fast.UndoRedo.Core.Logging;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -127,7 +127,11 @@ namespace Fast.UndoRedo.Core
                             if (e.NewItems.Count > 1)
                             {
                                 var list = new List<object>();
-                                for (int i = 0; i < e.NewItems.Count; i++) list.Add(e.NewItems[i]);
+                                for (int i = 0; i < e.NewItems.Count; i++)
+                                {
+                                    list.Add(e.NewItems[i]);
+                                }
+
                                 CreateAndPush("Add", list, null, start, -1, null, $"Add range ({e.NewItems.Count})");
 
                                 // update snapshot
@@ -159,7 +163,11 @@ namespace Fast.UndoRedo.Core
                             if (e.OldItems.Count > 1)
                             {
                                 var list = new List<object>();
-                                for (int i = 0; i < e.OldItems.Count; i++) list.Add(e.OldItems[i]);
+                                for (int i = 0; i < e.OldItems.Count; i++)
+                                {
+                                    list.Add(e.OldItems[i]);
+                                }
+
                                 CreateAndPush("Remove", list, null, start, -1, list, $"Remove range ({e.OldItems.Count})");
 
                                 // update snapshot: remove range
@@ -167,12 +175,18 @@ namespace Fast.UndoRedo.Core
                                 {
                                     for (int i = 0; i < list.Count; i++)
                                     {
-                                        if (start < _snapshot.Count) _snapshot.RemoveAt(start);
+                                        if (start < _snapshot.Count)
+                                        {
+                                            _snapshot.RemoveAt(start);
+                                        }
                                     }
                                 }
                                 else
                                 {
-                                    foreach (var it in list) _snapshot?.Remove(it);
+                                    foreach (var it in list)
+                                    {
+                                        _snapshot?.Remove(it);
+                                    }
                                 }
                             }
                             else
