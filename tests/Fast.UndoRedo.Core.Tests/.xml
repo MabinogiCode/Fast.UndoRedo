@@ -128,6 +128,21 @@
             Verifies Clear undo/redo behavior.
             </summary>
         </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.CollectionClearTests">
+            <summary>
+            Tests for clear/remove behaviors for collections and enum conversions.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.CollectionClearTests.ClearUndoRedoRestoresItemsForEnums">
+            <summary>
+            Verifies that clearing an enum collection produces an action that can undo/redo the cleared items.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.CollectionClearTests.CreateCollectionChangeAction_ClearedItemsAsStrings_ForEnum">
+            <summary>
+            Verifies CreateCollectionChangeAction handles clearedItems passed as strings for enum collections.
+            </summary>
+        </member>
         <member name="T:Fast.UndoRedo.Core.Tests.CollectionSubscriptionTests">
             <summary>
             Tests verifying collection subscription and batch event handling behavior.
@@ -141,6 +156,31 @@
         <member name="M:Fast.UndoRedo.Core.Tests.CollectionSubscriptionTests.AttachCollectionRecordsAddRangeRemoveRange">
             <summary>
             Verifies that batched add/remove sequences are recorded properly.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.CollectionTestEnum">
+            <summary>
+            Enum used by collection tests.
+            </summary>
+        </member>
+        <member name="F:Fast.UndoRedo.Core.Tests.CollectionTestEnum.X">
+            <summary>
+            First value.
+            </summary>
+        </member>
+        <member name="F:Fast.UndoRedo.Core.Tests.CollectionTestEnum.Y">
+            <summary>
+            Second value.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.CreateCollectionChangeActionEnumTests">
+            <summary>
+            Tests for collection change actions involving enum element types.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.CreateCollectionChangeActionEnumTests.CollectionChangeMoveWithEnumItemsWorks">
+            <summary>
+            Verifies move/undo/redo behavior for enum-typed ObservableCollection.
             </summary>
         </member>
         <member name="T:Fast.UndoRedo.Core.Tests.DummyCollection">
@@ -468,6 +508,38 @@
             Verifies that Register records property changes into the undo/redo service.
             </summary>
         </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.StackUndoEnumTests">
+            <summary>
+            Tests for StackUndo behavior with enum-backed properties.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.StackUndoEnumTests.StackUndoSetsAndCreatesActionForEnumFromEnumValue">
+            <summary>
+            Verifies that StackUndo records an action and assigns when given a different enum value.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.StackUndoEnumTests.StackUndoSetsAndCreatesActionForEnumFromInt">
+            <summary>
+            Verifies that StackUndo handles enum values supplied as underlying integers.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.StackUndoEnumTests.StackUndoSetsAndCreatesActionForEnumFromString">
+            <summary>
+            Verifies that StackUndo handles enum values parsed from strings.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.StaticAnalysisTests">
+            <summary>
+            Runs a minimal static analysis check if Roslyn MSBuild workspace is available at runtime.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.StaticAnalysisTests.NoCompilerErrorsInProject">
+            <summary>
+            Attempt to detect presence of Roslyn MSBuild workspace; skip test if not available.
+            This prevents hard dependency on Roslyn workspaces in CI environments where it's not installed.
+            </summary>
+            <returns>A <see cref="T:System.Threading.Tasks.Task"/> that completes when the check finishes or is skipped.</returns>
+        </member>
         <member name="T:Fast.UndoRedo.Core.Tests.TestAction">
             <summary>
             A simple undoable action for testing purposes.
@@ -494,6 +566,21 @@
         <member name="M:Fast.UndoRedo.Core.Tests.TestAction.Redo">
             <summary>
             Executes the redo action.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.TestEnum">
+            <summary>
+            Test enumeration used by unit tests.
+            </summary>
+        </member>
+        <member name="F:Fast.UndoRedo.Core.Tests.TestEnum.A">
+            <summary>
+            First value.
+            </summary>
+        </member>
+        <member name="F:Fast.UndoRedo.Core.Tests.TestEnum.B">
+            <summary>
+            Second value.
             </summary>
         </member>
         <member name="T:Fast.UndoRedo.Core.Tests.TestObserver">
@@ -523,6 +610,26 @@
             Invokes the action provided in the constructor.
             </summary>
             <param name="value">The state value.</param>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.TestOwner">
+            <summary>
+            Simple owner class exposing properties used as backing fields in tests.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.Tests.TestOwner.EnumProp">
+            <summary>
+            Enum property for testing.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.Tests.TestOwner.StringProp">
+            <summary>
+            String property for testing.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.Tests.TestOwner.IntProp">
+            <summary>
+            Integer property for testing.
+            </summary>
         </member>
         <member name="T:Fast.UndoRedo.Core.Tests.UndoRedoServiceTests">
             <summary>

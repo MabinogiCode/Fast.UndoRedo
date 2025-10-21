@@ -79,7 +79,48 @@ namespace Fast.UndoRedo.Core
             catch (Exception ex)
             {
                 logger?.LogException(ex);
-                return null;
+
+                // fallback: try to construct concrete CollectionChangeAction<T> via Activator
+                try
+                {
+                    var actionType = typeof(CollectionChangeAction<>).MakeGenericType(elementType);
+
+                    // convert item/old/cleared
+                    object convertedItem = null;
+                    object convertedOld = null;
+                    object convertedCleared = null;
+
+                    if (itemObj != null)
+                    {
+                        convertedItem = ConvertTo(itemObj, elementType);
+                    }
+
+                    if (oldItemObj != null)
+                    {
+                        convertedOld = ConvertTo(oldItemObj, elementType);
+                    }
+
+                    if (clearedItems != null)
+                    {
+                        var listType = typeof(List<>).MakeGenericType(elementType);
+                        var list = (System.Collections.IList)Activator.CreateInstance(listType);
+                        foreach (var it in clearedItems)
+                        {
+                            list.Add(ConvertTo(it, elementType));
+                        }
+
+                        convertedCleared = list;
+                    }
+
+                    var ctorArgs = new object[] { collectionInstance, changeType, convertedItem, index, convertedOld, toIndex, convertedCleared, description };
+                    var created = Activator.CreateInstance(actionType, ctorArgs);
+                    return created as IUndoableAction;
+                }
+                catch (Exception ex2)
+                {
+                    logger?.LogException(ex2);
+                    return null;
+                }
             }
         }
 
@@ -227,13 +268,118 @@ namespace Fast.UndoRedo.Core
                 return null;
             }
 
-            var list = new List<T>();
+            // Try to get count to preallocate
+            int count = -1;
+            if (items is ICollection<object> collObj)
+            {
+                count = collObj.Count;
+            }
+            else if (items is System.Collections.ICollection coll)
+            {
+                count = coll.Count;
+            }
+
+            var list = count >= 0 ? new List<T>(count) : new List<T>();
+            var targetType = typeof(T);
+            bool isEnum = targetType.IsEnum;
+
             foreach (var o in items)
             {
-                list.Add((T)o);
+                if (o == null)
+                {
+                    list.Add(default);
+                    continue;
+                }
+
+                try
+                {
+                    if (isEnum)
+                    {
+                        if (targetType.IsInstanceOfType(o))
+                        {
+                            list.Add((T)o);
+                            continue;
+                        }
+
+                        if (o is string s)
+                        {
+                            var parsed = Enum.Parse(targetType, s, true);
+                            list.Add((T)parsed);
+                            continue;
+                        }
+
+                        var underlying = Convert.ChangeType(o, Enum.GetUnderlyingType(targetType));
+                        var enumObj = Enum.ToObject(targetType, underlying);
+                        list.Add((T)enumObj);
+                        continue;
+                    }
+
+                    // non-enum: try direct cast then Convert
+                    if (targetType.IsInstanceOfType(o))
+                    {
+                        list.Add((T)o);
+                        continue;
+                    }
+
+                    list.Add((T)Convert.ChangeType(o, targetType));
+                }
+                catch
+                {
+                    // fallback to default
+                    try
+                    {
+                        list.Add((T)o);
+                    }
+                    catch
+                    {
+                        list.Add(default);
+                    }
+                }
             }
 
             return list;
+        }
+
+        // helper to convert arbitrary object to target type with enum support (shared with CollectionSubscription)
+        private static object ConvertTo(object value, Type targetType)
+        {
+            if (value == null)
+            {
+                return null;
+            }
+
+            if (targetType.IsInstanceOfType(value))
+            {
+                return value;
+            }
+
+            if (targetType.IsEnum)
+            {
+                try
+                {
+                    if (value is string s)
+                    {
+                        return Enum.Parse(targetType, s, true);
+                    }
+
+                    var underlyingType = Enum.GetUnderlyingType(targetType);
+                    var converted = Convert.ChangeType(value, underlyingType);
+                    return Enum.ToObject(targetType, converted);
+                }
+                catch
+                {
+                    return value;
+                }
+            }
+
+            try
+            {
+                return Convert.ChangeType(value, targetType);
+            }
+            catch
+            {
+                return value;
+            }
         }
     }
 }

@@ -59,7 +59,17 @@ namespace Fast.UndoRedo.Core
                             valueCache.Add(s, cache);
                         }
 
-                        cache[e.PropertyName] = prop.GetValue(s);
+                        // use object-based cached getter to reduce reflection allocations
+                        var getter = ReflectionHelpers.CreateObjectGetter(s.GetType(), prop, logger);
+                        if (getter != null)
+                        {
+                            var val = getter(s);
+                            cache[e.PropertyName] = val;
+                        }
+                        else
+                        {
+                            cache[e.PropertyName] = prop.GetValue(s);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -100,7 +110,16 @@ namespace Fast.UndoRedo.Core
                     object newVal = null;
                     try
                     {
-                        newVal = prop.GetValue(s);
+                        // use object-based cached getter when available
+                        var getter = ReflectionHelpers.CreateObjectGetter(s.GetType(), prop, logger);
+                        if (getter != null)
+                        {
+                            newVal = getter(s);
+                        }
+                        else
+                        {
+                            newVal = prop.GetValue(s);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -109,14 +128,16 @@ namespace Fast.UndoRedo.Core
                     }
 
                     // Create setter delegate
-                    var setter = ReflectionHelpers.CreateSetter(s.GetType(), prop, logger);
-                    if (setter == null)
+                    var setterObj = ReflectionHelpers.CreateObjectSetter(s.GetType(), prop, logger);
+                    if (setterObj == null)
                     {
                         return;
                     }
 
                     try
                     {
+                        // Create action using the original setter delegate (compiled Action<TTarget,TProp>) so undo/redo uses typed setter
+                        var setter = ReflectionHelpers.CreateSetter(s.GetType(), prop, logger);
                         var action = ActionFactory.CreatePropertyChangeAction(s, prop, setter, oldVal, newVal, $"{s.GetType().Name}.{prop.Name} changed", logger);
                         if (action is IUndoableAction ua)
                         {
