@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Specialized;
 using Fast.UndoRedo.Core;
 using Fast.UndoRedo.Core.Logging;

@@ -3,6 +3,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <RootNamespace>Fast.UndoRedo.ReactiveUI</RootNamespace>
+    <WarningsAsErrors>IDE0011;CS0219</WarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Fast.UndoRedo.Core\Fast.UndoRedo.Core.csproj" />

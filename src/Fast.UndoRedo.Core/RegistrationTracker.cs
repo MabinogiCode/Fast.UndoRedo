@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Fast.UndoRedo.Core.Logging;
 
 namespace Fast.UndoRedo.Core
@@ -11,14 +12,22 @@ namespace Fast.UndoRedo.Core
     /// <summary>
     /// Tracks registrations of objects for change notifications and collection subscriptions.
     /// Registers property change and collection change handlers and caches values for undo/redo.
+    /// Improvements applied to follow best practices:
+    /// - use ConditionalWeakTable for registrations and value cache to avoid keeping strong references to tracked objects (prevents memory leaks)
+    /// - tighten null checks and reduce repeated dictionary-style indexing
     /// </summary>
     public class RegistrationTracker
     {
         private readonly UndoRedoService _service;
         private readonly ICoreLogger _logger;
-        private readonly Dictionary<object, List<IDisposable>> _registrations = new Dictionary<object, List<IDisposable>>();
-        private readonly Dictionary<object, Dictionary<string, object>> _valueCache = new Dictionary<object, Dictionary<string, object>>();
+
+        // Use ConditionalWeakTable to avoid preventing tracked objects from being garbage collected
+        private readonly ConditionalWeakTable<object, List<IDisposable>> _registrations = new ConditionalWeakTable<object, List<IDisposable>>();
+        private readonly ConditionalWeakTable<object, Dictionary<string, object>> _valueCache = new ConditionalWeakTable<object, Dictionary<string, object>>();
+
+        // Collection snapshots are kept as a normal dictionary because snapshots are typically long-lived and keyed by collection instances
         private readonly Dictionary<object, List<object>> _collectionSnapshots = new Dictionary<object, List<object>>();
+        private readonly object _collectionSnapshotsLock = new object();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RegistrationTracker"/> class.
@@ -50,17 +59,49 @@ namespace Fast.UndoRedo.Core
                 return;
             }
 
-            if (_registrations.ContainsKey(obj))
+            // If already registered, skip
+            if (_registrations.TryGetValue(obj, out _))
             {
                 return;
             }
 
             var disposables = new List<IDisposable>();
-            _registrations[obj] = disposables;
+
+            // Add registrations table entry early so nested registration calls see this object as registered
+            try
+            {
+                _registrations.Add(obj, disposables);
+            }
+            catch
+            {
+                // If Add fails because key already exists, just return
+                if (_registrations.TryGetValue(obj, out _))
+                {
+                    return;
+                }
+
+                throw;
+            }
 
             // Cache current public property values
             var propCache = new Dictionary<string, object>();
-            _valueCache[obj] = propCache;
+            try
+            {
+                _valueCache.Add(obj, propCache);
+            }
+            catch
+            {
+                // if already present, ignore - we will re-use existing
+                if (!_valueCache.TryGetValue(obj, out var existing))
+                {
+                    // if unexpected, ensure we still have a cache reference
+                    _valueCache.Add(obj, propCache);
+                }
+                else
+                {
+                    propCache = existing;
+                }
+            }
 
             foreach (var prop in obj.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
@@ -75,9 +116,6 @@ namespace Fast.UndoRedo.Core
                     continue;
                 }
 
-                // record whether property can be written; we still may register nested objects even if property is read-only
-                var canWrite = prop.CanWrite;
-
                 try
                 {
                     propCache[prop.Name] = prop.GetValue(obj);
@@ -89,7 +127,17 @@ namespace Fast.UndoRedo.Core
                 }
 
                 // If property is a nested object, register recursively
-                var val = prop.GetValue(obj);
+                object val = null;
+                try
+                {
+                    val = prop.GetValue(obj);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogException(ex);
+                    continue;
+                }
+
                 if (val == null)
                 {
                     continue;
@@ -116,7 +164,10 @@ namespace Fast.UndoRedo.Core
                         snapshot.Add(item);
                     }
 
-                    _collectionSnapshots[val] = snapshot;
+                    lock (_collectionSnapshotsLock)
+                    {
+                        _collectionSnapshots[val] = snapshot;
+                    }
 
                     foreach (var item in snapshot)
                     {
@@ -137,6 +188,27 @@ namespace Fast.UndoRedo.Core
                             }
                         }
                     }
+                }
+
+                // delegate collection subscription creation
+                var collectionReg = CollectionRegistrar.RegisterCollection(val, _service, _collectionSnapshots, _logger);
+                if (collectionReg != null)
+                {
+                    disposables.Add(collectionReg);
+
+                    if (val is INotifyPropertyChanged)
+                    {
+                        try
+                        {
+                            Register(val);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogException(ex);
+                        }
+                    }
+
+                    continue;
                 }
 
                 // If it's INotifyPropertyChanged or INotifyCollectionChanged, register recursively and subscribe to collection changes
@@ -178,114 +250,14 @@ namespace Fast.UndoRedo.Core
                 }
             }
 
-            if (obj is INotifyPropertyChanging inpcChanging)
+            // Use PropertyChangeRegistrar to register property changing/changed handlers
+            var propHandlers = PropertyChangeRegistrar.Register(obj, _service, _valueCache, _logger);
+            if (propHandlers != null)
             {
-                PropertyChangingEventHandler changingHandler = (s, e) =>
-                {
-                    if (_service.IsApplying)
-                    {
-                        return; // do not cache old values when applying undo/redo
-                    }
-
-                    var prop = s.GetType().GetProperty(e.PropertyName, BindingFlags.Public | BindingFlags.Instance);
-                    if (prop == null)
-                    {
-                        return;
-                    }
-
-                    if (prop.GetCustomAttribute<FastUndoIgnoreAttribute>() != null)
-                    {
-                        return;
-                    }
-
-                    // store current value in cache (will be used on PropertyChanged)
-                    try
-                    {
-                        _valueCache[s][e.PropertyName] = prop.GetValue(s);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogException(ex);
-                        _valueCache[s][e.PropertyName] = null;
-                    }
-                };
-
-                inpcChanging.PropertyChanging += changingHandler;
-                disposables.Add(new DisposableAction(() => inpcChanging.PropertyChanging -= changingHandler));
+                disposables.Add(propHandlers);
             }
 
-            if (obj is INotifyPropertyChanged inpc)
-            {
-                PropertyChangedEventHandler changedHandler = (s, e) =>
-                {
-                    if (_service.IsApplying)
-                    {
-                        return; // skip recording when applying undo/redo
-                    }
-
-                    var prop = s.GetType().GetProperty(e.PropertyName, BindingFlags.Public | BindingFlags.Instance);
-                    if (prop == null)
-                    {
-                        return;
-                    }
-
-                    if (prop.GetCustomAttribute<FastUndoIgnoreAttribute>() != null)
-                    {
-                        return;
-                    }
-
-                    object oldVal = null;
-                    if (_valueCache.TryGetValue(s, out var cache) && cache.TryGetValue(e.PropertyName, out var o))
-                    {
-                        oldVal = o;
-                    }
-
-                    object newVal = null;
-                    try
-                    {
-                        newVal = prop.GetValue(s);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogException(ex);
-                        newVal = null;
-                    }
-
-                    // Create setter delegate
-                    var setter = ReflectionHelpers.CreateSetter(s.GetType(), prop);
-                    if (setter == null)
-                    {
-                        return;
-                    }
-
-                    var actionType = typeof(PropertyChangeAction<,>).MakeGenericType(s.GetType(), prop.PropertyType);
-                    try
-                    {
-                        // use a factory delegate instead of Activator when possible (left for later refactor)
-                        var action = Activator.CreateInstance(actionType, s, setter, oldVal, newVal, $"{s.GetType().Name}.{prop.Name} changed");
-                        if (action is IUndoableAction ua)
-                        {
-                            _service.Push(ua);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogException(ex);
-                    }
-
-                    // update cache
-                    if (_valueCache.TryGetValue(s, out var cache2))
-                    {
-                        cache2[e.PropertyName] = newVal;
-                    }
-                };
-
-                inpc.PropertyChanged += changedHandler;
-                disposables.Add(new DisposableAction(() => inpc.PropertyChanged -= changedHandler));
-            }
-
-            // store disposables
-            _registrations[obj] = disposables;
+            // No need to set _registrations[obj] because we added earlier
         }
 
         /// <summary>
@@ -316,14 +288,22 @@ namespace Fast.UndoRedo.Core
                 _registrations.Remove(obj);
             }
 
-            if (_valueCache.ContainsKey(obj))
+            // Remove value cache if present
+            try
             {
                 _valueCache.Remove(obj);
             }
-
-            if (_collectionSnapshots.ContainsKey(obj))
+            catch
             {
-                _collectionSnapshots.Remove(obj);
+                // ignore
+            }
+
+            lock (_collectionSnapshotsLock)
+            {
+                if (_collectionSnapshots.ContainsKey(obj))
+                {
+                    _collectionSnapshots.Remove(obj);
+                }
             }
         }
     }

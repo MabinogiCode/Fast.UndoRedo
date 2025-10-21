@@ -2,6 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
     <IsPackable>false</IsPackable>
+    <WarningsAsErrors>IDE0011;CS0219</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

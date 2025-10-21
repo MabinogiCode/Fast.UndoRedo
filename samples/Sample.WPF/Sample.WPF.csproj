@@ -5,6 +5,7 @@
     <LangVersion>latest</LangVersion>
     <UseWPF>true</UseWPF>
     <RootNamespace>Sample.WPF</RootNamespace>
+    <WarningsAsErrors>IDE0011;CS0219</WarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Fast.UndoRedo.Core\Fast.UndoRedo.Core.csproj" />
