@@ -17,6 +17,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DocumentationFile>$(AssemblyName).xml</DocumentationFile>
     <PackageIcon>mabinogi-icon.png</PackageIcon>
+    <PackageId>Fast.UndoRedo</PackageId>
   </PropertyGroup>
   <ItemGroup>
     <None Include="nuget-readme.md" Pack="true" PackagePath="" />
