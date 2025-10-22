@@ -16,6 +16,30 @@ namespace Fast.UndoRedo.Core
         private static readonly ConcurrentDictionary<string, Func<object, object, object, object, string, IUndoableAction>> _propCtorCache = new ConcurrentDictionary<string, Func<object, object, object, object, string, IUndoableAction>>();
         private static readonly ConcurrentDictionary<string, Func<object, CollectionChangeType, object, object, int, int, IEnumerable<object>, string, IUndoableAction>> _collectionCtorCache = new ConcurrentDictionary<string, Func<object, CollectionChangeType, object, object, int, int, IEnumerable<object>, string, IUndoableAction>>();
 
+        // Test helpers (internal wrappers) to access private conversion helpers without changing existing method names
+
+        /// <summary>
+        /// Test helper that creates a typed list from an enumerable of objects. This forwards to the private CreateTypedList implementation.
+        /// </summary>
+        /// <typeparam name="T">Target element type.</typeparam>
+        /// <param name="items">Input objects.</param>
+        /// <returns>Enumerable of typed items.</returns>
+        public static IEnumerable<T> CreateTypedListForTests<T>(IEnumerable<object> items)
+        {
+            return CreateTypedList<T>(items);
+        }
+
+        /// <summary>
+        /// Test helper that attempts to convert an arbitrary object to a target type, including enum parsing.
+        /// </summary>
+        /// <param name="value">Value to convert.</param>
+        /// <param name="targetType">Target type.</param>
+        /// <returns>Converted value or original on failure.</returns>
+        public static object ConvertToForTests(object value, Type targetType)
+        {
+            return ConvertTo(value, targetType);
+        }
+
         /// <summary>
         /// Creates an undoable action for a property change.
         /// </summary>
@@ -79,7 +103,48 @@ namespace Fast.UndoRedo.Core
             catch (Exception ex)
             {
                 logger?.LogException(ex);
-                return null;
+
+                // fallback: try to construct concrete CollectionChangeAction<T> via Activator
+                try
+                {
+                    var actionType = typeof(CollectionChangeAction<>).MakeGenericType(elementType);
+
+                    // convert item/old/cleared
+                    object convertedItem = null;
+                    object convertedOld = null;
+                    object convertedCleared = null;
+
+                    if (itemObj != null)
+                    {
+                        convertedItem = ConvertTo(itemObj, elementType);
+                    }
+
+                    if (oldItemObj != null)
+                    {
+                        convertedOld = ConvertTo(oldItemObj, elementType);
+                    }
+
+                    if (clearedItems != null)
+                    {
+                        var listType = typeof(List<>).MakeGenericType(elementType);
+                        var list = (System.Collections.IList)Activator.CreateInstance(listType);
+                        foreach (var it in clearedItems)
+                        {
+                            list.Add(ConvertTo(it, elementType));
+                        }
+
+                        convertedCleared = list;
+                    }
+
+                    var ctorArgs = new object[] { collectionInstance, changeType, convertedItem, index, convertedOld, toIndex, convertedCleared, description };
+                    var created = Activator.CreateInstance(actionType, ctorArgs);
+                    return created as IUndoableAction;
+                }
+                catch (Exception ex2)
+                {
+                    logger?.LogException(ex2);
+                    return null;
+                }
             }
         }
 
@@ -227,13 +292,118 @@ namespace Fast.UndoRedo.Core
                 return null;
             }
 
-            var list = new List<T>();
+            // Try to get count to preallocate
+            int count = -1;
+            if (items is ICollection<object> collObj)
+            {
+                count = collObj.Count;
+            }
+            else if (items is System.Collections.ICollection coll)
+            {
+                count = coll.Count;
+            }
+
+            var list = count >= 0 ? new List<T>(count) : new List<T>();
+            var targetType = typeof(T);
+            bool isEnum = targetType.IsEnum;
+
             foreach (var o in items)
             {
-                list.Add((T)o);
+                if (o == null)
+                {
+                    list.Add(default);
+                    continue;
+                }
+
+                try
+                {
+                    if (isEnum)
+                    {
+                        if (targetType.IsInstanceOfType(o))
+                        {
+                            list.Add((T)o);
+                            continue;
+                        }
+
+                        if (o is string s)
+                        {
+                            var parsed = Enum.Parse(targetType, s, true);
+                            list.Add((T)parsed);
+                            continue;
+                        }
+
+                        var underlying = Convert.ChangeType(o, Enum.GetUnderlyingType(targetType));
+                        var enumObj = Enum.ToObject(targetType, underlying);
+                        list.Add((T)enumObj);
+                        continue;
+                    }
+
+                    // non-enum: try direct cast then Convert
+                    if (targetType.IsInstanceOfType(o))
+                    {
+                        list.Add((T)o);
+                        continue;
+                    }
+
+                    list.Add((T)Convert.ChangeType(o, targetType));
+                }
+                catch
+                {
+                    // fallback to default
+                    try
+                    {
+                        list.Add((T)o);
+                    }
+                    catch
+                    {
+                        list.Add(default);
+                    }
+                }
             }
 
             return list;
+        }
+
+        // helper to convert arbitrary object to target type with enum support (shared with CollectionSubscription)
+        private static object ConvertTo(object value, Type targetType)
+        {
+            if (value == null)
+            {
+                return null;
+            }
+
+            if (targetType.IsInstanceOfType(value))
+            {
+                return value;
+            }
+
+            if (targetType.IsEnum)
+            {
+                try
+                {
+                    if (value is string s)
+                    {
+                        return Enum.Parse(targetType, s, true);
+                    }
+
+                    var underlyingType = Enum.GetUnderlyingType(targetType);
+                    var converted = Convert.ChangeType(value, underlyingType);
+                    return Enum.ToObject(targetType, converted);
+                }
+                catch
+                {
+                    return value;
+                }
+            }
+
+            try
+            {
+                return Convert.ChangeType(value, targetType);
+            }
+            catch
+            {
+                return value;
+            }
         }
     }
 }

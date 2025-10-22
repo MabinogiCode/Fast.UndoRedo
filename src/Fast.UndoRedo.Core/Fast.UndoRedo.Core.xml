@@ -9,6 +9,22 @@
             Provides factory methods for creating undo/redo actions.
             </summary>
         </member>
+        <member name="M:Fast.UndoRedo.Core.ActionFactory.CreateTypedListForTests``1(System.Collections.Generic.IEnumerable{System.Object})">
+            <summary>
+            Test helper that creates a typed list from an enumerable of objects. This forwards to the private CreateTypedList implementation.
+            </summary>
+            <typeparam name="T">Target element type.</typeparam>
+            <param name="items">Input objects.</param>
+            <returns>Enumerable of typed items.</returns>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.ActionFactory.ConvertToForTests(System.Object,System.Type)">
+            <summary>
+            Test helper that attempts to convert an arbitrary object to a target type, including enum parsing.
+            </summary>
+            <param name="value">Value to convert.</param>
+            <param name="targetType">Target type.</param>
+            <returns>Converted value or original on failure.</returns>
+        </member>
         <member name="M:Fast.UndoRedo.Core.ActionFactory.CreatePropertyChangeAction(System.Object,System.Reflection.PropertyInfo,System.Object,System.Object,System.Object,System.String,Fast.UndoRedo.Core.Logging.ICoreLogger)">
             <summary>
             Creates an undoable action for a property change.
@@ -361,13 +377,28 @@
             Provides helper methods for reflection operations used in the undo/redo system.
             </summary>
         </member>
+        <member name="M:Fast.UndoRedo.Core.ReflectionHelpers.GetPublicInstanceProperties(System.Type)">
+            <summary>
+            Gets cached public instance properties for a given type.
+            </summary>
+            <param name="type">The type to get properties for.</param>
+            <returns>Array of <see cref="T:System.Reflection.PropertyInfo"/>.</returns>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.ReflectionHelpers.GetProperty(System.Type,System.String)">
+            <summary>
+            Gets a cached PropertyInfo for the given type and property name.
+            </summary>
+            <param name="type">The type declaring the property.</param>
+            <param name="name">The property name.</param>
+            <returns>The <see cref="T:System.Reflection.PropertyInfo"/> or null if not found.</returns>
+        </member>
         <member name="M:Fast.UndoRedo.Core.ReflectionHelpers.CreateSetter(System.Type,System.Reflection.PropertyInfo)">
             <summary>
             Creates a setter action for a property.
             </summary>
             <param name="targetType">The type of the target object.</param>
             <param name="prop">The property information.</param>
-            <returns>The compiled setter action, or null if creation failed.</returns>
+            <returns>The compiled setter action (boxed as object), or null if creation failed.</returns>
         </member>
         <member name="M:Fast.UndoRedo.Core.ReflectionHelpers.CreateSetter(System.Type,System.Reflection.PropertyInfo,Fast.UndoRedo.Core.Logging.ICoreLogger)">
             <summary>
@@ -376,7 +407,34 @@
             <param name="targetType">The type of the target object.</param>
             <param name="prop">The property information.</param>
             <param name="logger">The logger for error reporting.</param>
-            <returns>The compiled setter action, or null if creation failed.</returns>
+            <returns>The compiled setter action (boxed as object), or null if creation failed.</returns>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.ReflectionHelpers.CreateGetter(System.Type,System.Reflection.PropertyInfo,Fast.UndoRedo.Core.Logging.ICoreLogger)">
+            <summary>
+            Creates a getter function for a property and caches it.
+            </summary>
+            <param name="targetType">The type that declares the property.</param>
+            <param name="prop">The property info.</param>
+            <param name="logger">Optional logger for error reporting.</param>
+            <returns>A compiled Func&lt;TTarget, TProp&gt; boxed as object, or null if getter not available.</returns>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.ReflectionHelpers.CreateObjectSetter(System.Type,System.Reflection.PropertyInfo,Fast.UndoRedo.Core.Logging.ICoreLogger)">
+            <summary>
+            Creates a wrapper setter that accepts object parameters to avoid DynamicInvoke allocations.
+            </summary>
+            <param name="targetType">The target type that declares the property.</param>
+            <param name="prop">The property information.</param>
+            <param name="logger">Optional logger for error reporting.</param>
+            <returns>A <c>Action&lt;object, object&gt;</c> that sets the property on the target instance, or null if not available.</returns>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.ReflectionHelpers.CreateObjectGetter(System.Type,System.Reflection.PropertyInfo,Fast.UndoRedo.Core.Logging.ICoreLogger)">
+            <summary>
+            Creates a wrapper getter that returns object to avoid DynamicInvoke allocations.
+            </summary>
+            <param name="targetType">The target type that declares the property.</param>
+            <param name="prop">The property information.</param>
+            <param name="logger">Optional logger for error reporting.</param>
+            <returns>A <c>Func&lt;object, object&gt;</c> that returns the property value boxed as object, or null if not available.</returns>
         </member>
         <member name="T:Fast.UndoRedo.Core.RegistrationTracker">
             <summary>

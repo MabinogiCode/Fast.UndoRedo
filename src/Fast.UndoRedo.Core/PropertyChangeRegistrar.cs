@@ -59,7 +59,17 @@ namespace Fast.UndoRedo.Core
                             valueCache.Add(s, cache);
                         }
 
-                        cache[e.PropertyName] = prop.GetValue(s);
+                        // use object-based cached getter to reduce reflection allocations
+                        var getter = ReflectionHelpers.CreateObjectGetter(s.GetType(), prop, logger);
+                        if (getter != null)
+                        {
+                            var val = getter(s);
+                            cache[e.PropertyName] = val;
+                        }
+                        else
+                        {
+                            cache[e.PropertyName] = prop.GetValue(s);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -92,15 +102,26 @@ namespace Fast.UndoRedo.Core
                     }
 
                     object oldVal = null;
+                    var hadOldVal = false;
                     if (valueCache.TryGetValue(s, out var cache) && cache.TryGetValue(e.PropertyName, out var o))
                     {
                         oldVal = o;
+                        hadOldVal = true;
                     }
 
                     object newVal = null;
                     try
                     {
-                        newVal = prop.GetValue(s);
+                        // use object-based cached getter when available
+                        var getter = ReflectionHelpers.CreateObjectGetter(s.GetType(), prop, logger);
+                        if (getter != null)
+                        {
+                            newVal = getter(s);
+                        }
+                        else
+                        {
+                            newVal = prop.GetValue(s);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -108,15 +129,39 @@ namespace Fast.UndoRedo.Core
                         newVal = null;
                     }
 
+                    // If we do not have a cached old value (no PropertyChanging fired and not present in cache),
+                    // we cannot reliably create an undo action. Update the cache and return.
+                    if (!hadOldVal)
+                    {
+                        try
+                        {
+                            if (!valueCache.TryGetValue(s, out var cache2))
+                            {
+                                cache2 = new Dictionary<string, object>();
+                                valueCache.Add(s, cache2);
+                            }
+
+                            cache2[e.PropertyName] = newVal;
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogException(ex);
+                        }
+
+                        return;
+                    }
+
                     // Create setter delegate
-                    var setter = ReflectionHelpers.CreateSetter(s.GetType(), prop, logger);
-                    if (setter == null)
+                    var setterObj = ReflectionHelpers.CreateObjectSetter(s.GetType(), prop, logger);
+                    if (setterObj == null)
                     {
                         return;
                     }
 
                     try
                     {
+                        // Create action using the original setter delegate (compiled Action<TTarget,TProp>) so undo/redo uses typed setter
+                        var setter = ReflectionHelpers.CreateSetter(s.GetType(), prop, logger);
                         var action = ActionFactory.CreatePropertyChangeAction(s, prop, setter, oldVal, newVal, $"{s.GetType().Name}.{prop.Name} changed", logger);
                         if (action is IUndoableAction ua)
                         {

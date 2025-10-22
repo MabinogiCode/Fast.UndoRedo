@@ -75,31 +75,28 @@ namespace Fast.UndoRedo.Core
             _enumType = typeof(CollectionChangeType);
 
             // ensure snapshot entry
+            // Always build a snapshot of current items so AttachCollection without an external snapshots dictionary still captures state.
+            _snapshot = new List<object>();
+            if (collectionInstance is IEnumerable enumerable2)
+            {
+                foreach (var it in enumerable2)
+                {
+                    _snapshot.Add(it);
+                }
+            }
+
             if (snapshots != null)
             {
-                if (!snapshots.TryGetValue(collectionInstance, out _snapshot))
+                // if an external snapshots dictionary was provided, ensure it references the same list
+                if (!snapshots.TryGetValue(collectionInstance, out var existing))
                 {
-                    // build a snapshot of current items if enumerable
-                    _snapshot = new List<object>();
-                    if (collectionInstance is IEnumerable enumerable)
-                    {
-                        foreach (var it in enumerable)
-                        {
-                            _snapshot.Add(it);
-                        }
-                    }
-
                     snapshots[collectionInstance] = _snapshot;
                 }
                 else
                 {
-                    // if we had a possibleSnap from earlier, use it; otherwise TryGetValue already assigned _snapshot
-                    _snapshot = _snapshot ?? possibleSnap ?? new List<object>();
+                    // prefer existing snapshot if present; otherwise keep ours
+                    _snapshot = existing ?? _snapshot;
                 }
-            }
-            else
-            {
-                _snapshot = new List<object>();
             }
 
             _incc.CollectionChanged += OnCollectionChanged;
@@ -133,16 +130,143 @@ namespace Fast.UndoRedo.Core
                 // Only push when not applying an undo/redo
                 if (!_service.IsApplying)
                 {
+                    // If this is a Clear action, prefer concrete creation using the provided clearedItems (snapshot) to ensure restore semantics.
+                    if (changeType == CollectionChangeType.Clear)
+                    {
+                        try
+                        {
+                            object convertedCleared = null;
+                            if (clearedItems != null)
+                            {
+                                var listType = typeof(List<>).MakeGenericType(_elementType);
+                                var list = (System.Collections.IList)Activator.CreateInstance(listType);
+                                foreach (var it in clearedItems)
+                                {
+                                    list.Add(ConvertTo(it, _elementType));
+                                }
+
+                                convertedCleared = list;
+                            }
+
+                            var ctorArgs = new object[] { _collectionInstance, changeType, null, -1, null, -1, convertedCleared, desc };
+                            var created = Activator.CreateInstance(_actionType, ctorArgs);
+                            if (created is IUndoableAction createdAction)
+                            {
+                                System.Console.WriteLine($"CreateAndPush: pushing Clear action desc={desc} on {_collectionInstance}");
+                                _service.Push(createdAction);
+                                return;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogException(ex);
+
+                            // fall through to factory fallback
+                        }
+                    }
+
+                    // Try ActionFactory first for other action types which may have more specific constructors.
                     var action = ActionFactory.CreateCollectionChangeAction(_collectionInstance, _elementType, changeType, itemObj, oldItemObj, index, toIndex, clearedItems, desc, _logger);
                     if (action is IUndoableAction ua)
                     {
+                        try
+                        {
+                            System.Console.WriteLine($"CreateAndPush: ActionFactory created action {ua.Description} change={changeType} item={itemObj} index={index}");
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogException(ex);
+                        }
+
                         _service.Push(ua);
+                        return;
+                    }
+
+                    // If factory couldn't produce an action, try concrete Activator creation as fallback.
+                    try
+                    {
+                        object convertedItem = ConvertTo(itemObj, _elementType);
+                        object convertedOld = ConvertTo(oldItemObj, _elementType);
+
+                        object convertedCleared = null;
+                        if (clearedItems != null)
+                        {
+                            var listType = typeof(List<>).MakeGenericType(_elementType);
+                            var list = (System.Collections.IList)Activator.CreateInstance(listType);
+                            foreach (var it in clearedItems)
+                            {
+                                list.Add(ConvertTo(it, _elementType));
+                            }
+
+                            convertedCleared = list;
+                        }
+
+                        var ctorArgs = new object[] { _collectionInstance, changeType, convertedItem, index, convertedOld, toIndex, convertedCleared, desc };
+                        var created = Activator.CreateInstance(_actionType, ctorArgs);
+                        if (created is IUndoableAction createdAction)
+                        {
+                            try
+                            {
+                                System.Console.WriteLine($"CreateAndPush: Activator created action {createdAction.Description} change={changeType} item={itemObj} index={index}");
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogException(ex);
+                            }
+
+                            _service.Push(createdAction);
+                            return;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogException(ex);
                     }
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogException(ex);
+            }
+        }
+
+        private object ConvertTo(object value, Type targetType)
+        {
+            if (value == null)
+            {
+                return null;
+            }
+
+            if (targetType.IsInstanceOfType(value))
+            {
+                return value;
+            }
+
+            if (targetType.IsEnum)
+            {
+                try
+                {
+                    if (value is string s)
+                    {
+                        return Enum.Parse(targetType, s, true);
+                    }
+
+                    var underlying = Convert.ChangeType(value, Enum.GetUnderlyingType(targetType));
+                    return Enum.ToObject(targetType, underlying);
+                }
+                catch
+                {
+                    return value;
+                }
+            }
+
+            try
+            {
+                return Convert.ChangeType(value, targetType);
+            }
+            catch
+            {
+                return value;
             }
         }
 

@@ -5,7 +5,7 @@ namespace Fast.UndoRedo.Core.Logging
     /// <summary>
     /// Extension methods for the <see cref="ICoreLogger"/> interface.
     /// </summary>
-    internal static class LoggerExtensions
+    public static class LoggerExtensions
     {
         /// <summary>
         /// Logs a message using the logger if it is not null.

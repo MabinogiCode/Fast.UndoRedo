@@ -5,10 +5,16 @@ namespace Fast.UndoRedo.Core.Tests
 {
     /// <summary>
     /// A simple view model for integration testing.
+    /// Implements both INotifyPropertyChanged and INotifyPropertyChanging so the registrar can cache old values.
     /// </summary>
-    internal class PersonViewModel : INotifyPropertyChanged
+    internal class PersonViewModel : INotifyPropertyChanged, INotifyPropertyChanging
     {
         private string _name = string.Empty;
+
+        /// <summary>
+        /// Occurs when a property value is about to change.
+        /// </summary>
+        public event PropertyChangingEventHandler PropertyChanging;
 
         /// <summary>
         /// Occurs when a property value has changed.
@@ -23,6 +29,7 @@ namespace Fast.UndoRedo.Core.Tests
             get => _name;
             set
             {
+                PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(nameof(Name)));
                 _name = value;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name)));
             }
