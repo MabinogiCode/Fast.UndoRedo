@@ -79,17 +79,17 @@
             Tests for the ActionFactory helpers and conversion behaviors.
             </summary>
         </member>
-        <member name="M:Fast.UndoRedo.Core.Tests.ActionFactoryTests.CreatePropertyChangeAction_CanCreateAndApply">
+        <member name="M:Fast.UndoRedo.Core.Tests.ActionFactoryTests.CreatePropertyChangeActionCanCreateAndApply">
             <summary>
             Verifies property action creation and application.
             </summary>
         </member>
-        <member name="M:Fast.UndoRedo.Core.Tests.ActionFactoryTests.CreateCollectionChangeAction_WithEnumClearedItems_ParsesStrings">
+        <member name="M:Fast.UndoRedo.Core.Tests.ActionFactoryTests.CreateCollectionChangeActionWithEnumClearedItemsParsesStrings">
             <summary>
             Verifies cleared items parsing works for enum collections when some inputs are strings or invalid.
             </summary>
         </member>
-        <member name="M:Fast.UndoRedo.Core.Tests.ActionFactoryTests.CreateCollectionChangeAction_NullInputs_ReturnsNull">
+        <member name="M:Fast.UndoRedo.Core.Tests.ActionFactoryTests.CreateCollectionChangeActionNullInputsReturnsNull">
             <summary>
             Verifies null inputs return null instead of throwing.
             </summary>
@@ -173,7 +173,7 @@
             Verifies that clearing an enum collection produces an action that can undo/redo the cleared items.
             </summary>
         </member>
-        <member name="M:Fast.UndoRedo.Core.Tests.CollectionClearTests.CreateCollectionChangeAction_ClearedItemsAsStrings_ForEnum">
+        <member name="M:Fast.UndoRedo.Core.Tests.CollectionClearTests.CreateCollectionChangeActionClearedItemsAsStringsForEnum">
             <summary>
             Verifies CreateCollectionChangeAction handles clearedItems passed as strings for enum collections.
             </summary>
