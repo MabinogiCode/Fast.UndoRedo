@@ -37,7 +37,7 @@ namespace Fast.UndoRedo.Core.Tests
         /// Verifies CreateCollectionChangeAction handles clearedItems passed as strings for enum collections.
         /// </summary>
         [Fact]
-        public void CreateCollectionChangeAction_ClearedItemsAsStrings_ForEnum()
+        public void CreateCollectionChangeActionClearedItemsAsStringsForEnum()
         {
             var service = new UndoRedoService();
             var coll = new ObservableCollection<CollectionTestEnum>();

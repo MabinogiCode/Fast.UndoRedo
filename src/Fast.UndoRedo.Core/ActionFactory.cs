@@ -16,6 +16,30 @@ namespace Fast.UndoRedo.Core
         private static readonly ConcurrentDictionary<string, Func<object, object, object, object, string, IUndoableAction>> _propCtorCache = new ConcurrentDictionary<string, Func<object, object, object, object, string, IUndoableAction>>();
         private static readonly ConcurrentDictionary<string, Func<object, CollectionChangeType, object, object, int, int, IEnumerable<object>, string, IUndoableAction>> _collectionCtorCache = new ConcurrentDictionary<string, Func<object, CollectionChangeType, object, object, int, int, IEnumerable<object>, string, IUndoableAction>>();
 
+        // Test helpers (internal wrappers) to access private conversion helpers without changing existing method names
+
+        /// <summary>
+        /// Test helper that creates a typed list from an enumerable of objects. This forwards to the private CreateTypedList implementation.
+        /// </summary>
+        /// <typeparam name="T">Target element type.</typeparam>
+        /// <param name="items">Input objects.</param>
+        /// <returns>Enumerable of typed items.</returns>
+        public static IEnumerable<T> CreateTypedListForTests<T>(IEnumerable<object> items)
+        {
+            return CreateTypedList<T>(items);
+        }
+
+        /// <summary>
+        /// Test helper that attempts to convert an arbitrary object to a target type, including enum parsing.
+        /// </summary>
+        /// <param name="value">Value to convert.</param>
+        /// <param name="targetType">Target type.</param>
+        /// <returns>Converted value or original on failure.</returns>
+        public static object ConvertToForTests(object value, Type targetType)
+        {
+            return ConvertTo(value, targetType);
+        }
+
         /// <summary>
         /// Creates an undoable action for a property change.
         /// </summary>
