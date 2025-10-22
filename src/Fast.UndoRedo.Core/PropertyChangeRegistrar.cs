@@ -102,9 +102,11 @@ namespace Fast.UndoRedo.Core
                     }
 
                     object oldVal = null;
+                    var hadOldVal = false;
                     if (valueCache.TryGetValue(s, out var cache) && cache.TryGetValue(e.PropertyName, out var o))
                     {
                         oldVal = o;
+                        hadOldVal = true;
                     }
 
                     object newVal = null;
@@ -125,6 +127,28 @@ namespace Fast.UndoRedo.Core
                     {
                         logger.LogException(ex);
                         newVal = null;
+                    }
+
+                    // If we do not have a cached old value (no PropertyChanging fired and not present in cache),
+                    // we cannot reliably create an undo action. Update the cache and return.
+                    if (!hadOldVal)
+                    {
+                        try
+                        {
+                            if (!valueCache.TryGetValue(s, out var cache2))
+                            {
+                                cache2 = new Dictionary<string, object>();
+                                valueCache.Add(s, cache2);
+                            }
+
+                            cache2[e.PropertyName] = newVal;
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogException(ex);
+                        }
+
+                        return;
                     }
 
                     // Create setter delegate

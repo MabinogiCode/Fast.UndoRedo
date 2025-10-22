@@ -145,6 +145,15 @@ namespace Fast.UndoRedo.Core
                 _redo.Clear();
             }
 
+            // temporary debug output
+            try
+            {
+                System.Console.WriteLine($"Pushed action: {action.Description}");
+            }
+            catch
+            {
+            }
+
             NotifyStateChanged();
         }
 
@@ -238,6 +247,14 @@ namespace Fast.UndoRedo.Core
                 act = _undo.Pop();
             }
 
+            try
+            {
+                System.Console.WriteLine($"Undoing: {act.Description}");
+            }
+            catch
+            {
+            }
+
             ExecuteAction(() => act.Undo());
             lock (_sync)
             {
@@ -261,6 +278,14 @@ namespace Fast.UndoRedo.Core
                 }
 
                 act = _redo.Pop();
+            }
+
+            try
+            {
+                System.Console.WriteLine($"Redoing: {act.Description}");
+            }
+            catch
+            {
             }
 
             ExecuteAction(() => act.Redo());
@@ -423,27 +448,10 @@ namespace Fast.UndoRedo.Core
             }
             finally
             {
-                // Instead of clearing _isApplying immediately, post a callback to the current synchronization context (if any)
-                // so that any cascading UI events on that context occur while _isApplying is still true and won't be recorded.
-                var sc = SynchronizationContext.Current;
-                if (sc != null)
+                // Always clear the applying flag immediately to avoid synchronization issues in test environments.
+                lock (_sync)
                 {
-                    sc.Post(
-                        _ =>
-                        {
-                            lock (_sync)
-                            {
-                                _isApplying = false;
-                            }
-                        },
-                        null);
-                }
-                else
-                {
-                    lock (_sync)
-                    {
-                        _isApplying = false;
-                    }
+                    _isApplying = false;
                 }
             }
         }

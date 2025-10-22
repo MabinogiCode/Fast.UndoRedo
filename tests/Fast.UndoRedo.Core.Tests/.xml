@@ -315,12 +315,42 @@
         </member>
         <member name="T:Fast.UndoRedo.Core.Tests.IntegrationTests">
             <summary>
-            Integration tests that exercise end-to-end attach/change/undo-redo scenarios.
+            Integration tests that exercise attach/change/undo-redo scenarios.
             </summary>
         </member>
-        <member name="M:Fast.UndoRedo.Core.Tests.IntegrationTests.EndToEndAttachChangeUndoRedoVerifyState">
+        <member name="M:Fast.UndoRedo.Core.Tests.IntegrationTests.PropertyAttachChangeUndoRedoWorks">
             <summary>
-            Full end-to-end scenario: attach view model and collection, perform changes and verify undo/redo restores state.
+            Verifies attaching a view model records property changes and supports undo/redo.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.IntegrationTests.CollectionAttachChangeUndoRedoWorks">
+            <summary>
+            Verifies attaching a collection records adds and supports undo/redo.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.LoggerExtensionsTests">
+            <summary>
+            Tests for the logging extension methods on <see cref="T:Fast.UndoRedo.Core.Logging.ICoreLogger"/>.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.LoggerExtensionsTests.Log_WithNullLogger_DoesNotThrow">
+            <summary>
+            Verifies calling the extension Log with a null logger does not throw.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.LoggerExtensionsTests.Log_WithLogger_CallsUnderlying">
+            <summary>
+            Verifies calling the extension Log with a real logger does not throw.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.LoggerExtensionsTests.LogException_WithNullLogger_DoesNotThrow">
+            <summary>
+            Verifies calling the extension LogException with a null logger does not throw.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.LoggerExtensionsTests.LogException_WithLogger_CallsUnderlying">
+            <summary>
+            Verifies calling the extension LogException with a real logger does not throw.
             </summary>
         </member>
         <member name="T:Fast.UndoRedo.Core.Tests.LoggingTests">
@@ -456,6 +486,12 @@
         <member name="T:Fast.UndoRedo.Core.Tests.PersonViewModel">
             <summary>
             A simple view model for integration testing.
+            Implements both INotifyPropertyChanged and INotifyPropertyChanging so the registrar can cache old values.
+            </summary>
+        </member>
+        <member name="E:Fast.UndoRedo.Core.Tests.PersonViewModel.PropertyChanging">
+            <summary>
+            Occurs when a property value is about to change.
             </summary>
         </member>
         <member name="E:Fast.UndoRedo.Core.Tests.PersonViewModel.PropertyChanged">
@@ -496,6 +532,26 @@
         <member name="M:Fast.UndoRedo.Core.Tests.ReactiveAdapterTests.ConcurrentRegisterUnregisterDoesNotThrowOrCorruptState">
             <summary>
             Validates concurrent register/unregister operations do not throw or corrupt state.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.ReflectionHelpersTests">
+            <summary>
+            Tests for the reflection helper methods used to create getters and setters.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.ReflectionHelpersTests.CreateSetterAndGetterWorkForPublicProperty">
+            <summary>
+            Verifies creation and invocation of typed getter and setter for a public property.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.ReflectionHelpersTests.CreateObjectGetterAndSetterWorkForNonPublicProperty">
+            <summary>
+            Verifies object-based getter and setter work for non-public properties and hit the cache path on repeated calls.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.ReflectionHelpersTests.GetPropertyAndGetPublicInstancePropertiesReturnConsistentResults">
+            <summary>
+            Verifies property lookup and public instance properties caching behavior.
             </summary>
         </member>
         <member name="T:Fast.UndoRedo.Core.Tests.RegistrationTrackerTests">
@@ -629,6 +685,47 @@
         <member name="P:Fast.UndoRedo.Core.Tests.TestOwner.IntProp">
             <summary>
             Integer property for testing.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.TestPrivatePropertyOwner">
+            <summary>
+            Simple class exposing a non-public property usable via reflection in tests.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.Tests.TestPrivatePropertyOwner.PrivateProp">
+            <summary>
+            A private property only accessible via reflection in tests.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.TestPrivatePropertyOwner.GetPrivatePropViaMethod">
+            <summary>
+            Helper method to expose the private property for assertions.
+            </summary>
+            <returns>The current value of the private property.</returns>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.UndoRedoServiceEdgeTests">
+            <summary>
+            Edge-case tests for UndoRedoService behavior.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.UndoRedoServiceEdgeTests.PushNullIsIgnoredAndStacksRemainEmpty">
+            <summary>
+            Verify Push handles null and does not change stack availability.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.UndoRedoServiceEdgeTests.UndoAndRedoWhenEmptyDoNotThrow">
+            <summary>
+            Verifies calling Undo/Redo on empty stacks does not throw.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.UndoRedoServiceEdgeTests.StackUndoWithNoOwnerFallsBackToAssign">
+            <summary>
+            Verifies StackUndo falls back to assignment when owner/property lookup fails.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.UndoRedoServiceEdgeTests.SubscribeThrowsOnNullObserver">
+            <summary>
+            Verify Subscribe throws when passed null observer.
             </summary>
         </member>
         <member name="T:Fast.UndoRedo.Core.Tests.UndoRedoServiceTests">

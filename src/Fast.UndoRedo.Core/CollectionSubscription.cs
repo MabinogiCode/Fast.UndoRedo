@@ -152,6 +152,7 @@ namespace Fast.UndoRedo.Core
                             var created = Activator.CreateInstance(_actionType, ctorArgs);
                             if (created is IUndoableAction createdAction)
                             {
+                                System.Console.WriteLine($"CreateAndPush: pushing Clear action desc={desc} on {_collectionInstance}");
                                 _service.Push(createdAction);
                                 return;
                             }
@@ -168,6 +169,15 @@ namespace Fast.UndoRedo.Core
                     var action = ActionFactory.CreateCollectionChangeAction(_collectionInstance, _elementType, changeType, itemObj, oldItemObj, index, toIndex, clearedItems, desc, _logger);
                     if (action is IUndoableAction ua)
                     {
+                        try
+                        {
+                            System.Console.WriteLine($"CreateAndPush: ActionFactory created action {ua.Description} change={changeType} item={itemObj} index={index}");
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogException(ex);
+                        }
+
                         _service.Push(ua);
                         return;
                     }
@@ -195,6 +205,15 @@ namespace Fast.UndoRedo.Core
                         var created = Activator.CreateInstance(_actionType, ctorArgs);
                         if (created is IUndoableAction createdAction)
                         {
+                            try
+                            {
+                                System.Console.WriteLine($"CreateAndPush: Activator created action {createdAction.Description} change={changeType} item={itemObj} index={index}");
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogException(ex);
+                            }
+
                             _service.Push(createdAction);
                             return;
                         }
