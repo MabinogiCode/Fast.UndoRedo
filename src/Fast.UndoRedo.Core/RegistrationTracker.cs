@@ -64,7 +64,14 @@ namespace Fast.UndoRedo.Core
 
             foreach (var prop in obj.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
+                // skip unreadable or explicitly ignored properties
                 if (!prop.CanRead || prop.GetCustomAttribute<FastUndoIgnoreAttribute>() != null)
+                {
+                    continue;
+                }
+
+                // skip indexers
+                if (prop.GetIndexParameters().Length > 0)
                 {
                     continue;
                 }
@@ -72,7 +79,27 @@ namespace Fast.UndoRedo.Core
                 object val;
                 try
                 {
-                    val = prop.GetValue(obj);
+                    // Avoid invoking getters for read-only properties that may have side-effects.
+                    // For auto-implemented read-only properties we can read the compiler-generated backing field
+                    // named "<PropertyName>k__BackingField". If no backing field exists (computed property), skip it.
+                    if (prop.GetSetMethod(true) == null)
+                    {
+                        var backingField = obj.GetType().GetField("<" + prop.Name + ">k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
+                        if (backingField != null)
+                        {
+                            val = backingField.GetValue(obj);
+                        }
+                        else
+                        {
+                            // do not invoke the getter for computed/read-only properties without a backing field
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        val = prop.GetValue(obj);
+                    }
+
                     propCache[prop.Name] = val;
                 }
                 catch (Exception ex)

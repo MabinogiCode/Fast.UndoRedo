@@ -398,6 +398,36 @@
             Constructor should throw when service is null.
             </summary>
         </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.FaultyViewModel">
+            <summary>
+            View model used by tests that contains a computed read-only property which throws when backing state is null.
+            </summary>
+        </member>
+        <member name="E:Fast.UndoRedo.Core.Tests.FaultyViewModel.PropertyChanging">
+            <summary>
+            Occurs when a property value is about to change.
+            </summary>
+        </member>
+        <member name="E:Fast.UndoRedo.Core.Tests.FaultyViewModel.PropertyChanged">
+            <summary>
+            Occurs when a property value has changed.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.Tests.FaultyViewModel.Model">
+            <summary>
+            Gets or sets the underlying model object used by the computed property.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.Tests.FaultyViewModel.LevelsCountText">
+            <summary>
+            A get-only computed property that throws when <see cref="P:Fast.UndoRedo.Core.Tests.FaultyViewModel.Model"/> is null. The registration code must not evaluate it.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.Tests.FaultyViewModel.Value">
+            <summary>
+            A normal writable property used to verify undo tracking still works.
+            </summary>
+        </member>
         <member name="T:Fast.UndoRedo.Core.Tests.IntegrationTests">
             <summary>
             Integration tests that exercise attach/change/undo-redo scenarios.
@@ -747,6 +777,16 @@
         <member name="M:Fast.UndoRedo.Core.Tests.ReactiveAdapterTests.ConcurrentRegisterUnregisterDoesNotThrowOrCorruptState">
             <summary>
             Validates concurrent register/unregister operations do not throw or corrupt state.
+            </summary>
+        </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.ReadOnlyComputedPropertyTests">
+            <summary>
+            Verifies that attaching an object does not invoke get-only computed properties which may throw when backing state is null.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.ReadOnlyComputedPropertyTests.AttachDoesNotInvokeGetOnlyProperties">
+            <summary>
+            Attaching an object must not evaluate computed read-only properties that can throw; writable properties should still be tracked.
             </summary>
         </member>
         <member name="T:Fast.UndoRedo.Core.Tests.ReflectionHelpersTests">
