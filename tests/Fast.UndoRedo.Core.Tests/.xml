@@ -678,6 +678,16 @@
             Gets a property with a private setter.
             </summary>
         </member>
+        <member name="T:Fast.UndoRedo.Core.Tests.PersonAgeTests">
+            <summary>
+            Tests ensuring get-only properties are not captured as separate undo actions.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.PersonAgeTests.ChangingDateOfBirthShouldCreateUndoActionButNotForAgeGetOnly">
+            <summary>
+            Changing DateOfBirth should create a single undo action for DateOfBirth and not for the get-only Age property.
+            </summary>
+        </member>
         <member name="T:Fast.UndoRedo.Core.Tests.PersonViewModel">
             <summary>
             A simple view model for integration testing.
@@ -697,6 +707,16 @@
         <member name="P:Fast.UndoRedo.Core.Tests.PersonViewModel.Name">
             <summary>
             Gets or sets the name and raises change notifications.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.Tests.PersonViewModel.DateOfBirth">
+            <summary>
+            Gets or sets the date of birth and raises change notifications. Used by tests to verify get-only Age is ignored.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.Tests.PersonViewModel.Age">
+            <summary>
+            Gets the computed age (read-only). This property should be ignored by the registrar when creating undo actions.
             </summary>
         </member>
         <member name="P:Fast.UndoRedo.Core.Tests.PersonViewModel.Items">
