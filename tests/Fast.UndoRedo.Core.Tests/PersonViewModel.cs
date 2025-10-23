@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 
 namespace Fast.UndoRedo.Core.Tests
@@ -10,6 +11,7 @@ namespace Fast.UndoRedo.Core.Tests
     internal class PersonViewModel : INotifyPropertyChanged, INotifyPropertyChanging
     {
         private string _name = string.Empty;
+        private DateTime? _dateOfBirth;
 
         /// <summary>
         /// Occurs when a property value is about to change.
@@ -34,6 +36,29 @@ namespace Fast.UndoRedo.Core.Tests
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name)));
             }
         }
+
+        /// <summary>
+        /// Gets or sets the date of birth and raises change notifications. Used by tests to verify get-only Age is ignored.
+        /// </summary>
+        public DateTime? DateOfBirth
+        {
+            get => _dateOfBirth;
+            set
+            {
+                PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(nameof(DateOfBirth)));
+                _dateOfBirth = value;
+
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DateOfBirth)));
+
+                // Age will also change but is get-only
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Age)));
+            }
+        }
+
+        /// <summary>
+        /// Gets the computed age (read-only). This property should be ignored by the registrar when creating undo actions.
+        /// </summary>
+        public int? Age => _dateOfBirth.HasValue ? (int?)(DateTime.Today.Year - _dateOfBirth.Value.Year) : null;
 
         /// <summary>
         /// Gets the collection of items.

@@ -1,7 +1,7 @@
 # Fast.UndoRedo
 
-[![Build Status](https://github.com/MabinogiCode/Fast.UndoRedo/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/MabinogiCode/Fast.UndoRedo/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/MabinogiCode/Fast.UndoRedo/branch/master/graph/badge.svg)](https://app.codecov.io/gh/MabinogiCode/Fast.UndoRedo)
+[![Build Status](https://github.com/MabinogiCode/FastUndoRedo/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/MabinogiCode/FastUndoRedo/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/MabinogiCode/FastUndoRedo/branch/master/graph/badge.svg)](https://app.codecov.io/gh/MabinogiCode/FastUndoRedo)
 
 Fast, non-intrusive undo/redo library for .NET applications. Designed to attach to existing objects and collections (`INotifyPropertyChanged`, `INotifyCollectionChanged`) and record undo/redo actions without forcing you to replace your models.
 
