@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading;
 
 namespace Fast.UndoRedo.Core
@@ -13,6 +14,8 @@ namespace Fast.UndoRedo.Core
     /// </summary>
     public class UndoRedoService : IObservable<UndoRedoState>
     {
+        private static readonly object DummyObject = new object();
+
         private readonly Stack<IUndoableAction> _undo = new Stack<IUndoableAction>();
         private readonly Stack<IUndoableAction> _redo = new Stack<IUndoableAction>();
         private readonly List<IObserver<UndoRedoState>> _observers = new List<IObserver<UndoRedoState>>();
@@ -23,7 +26,15 @@ namespace Fast.UndoRedo.Core
 
         // Centralized store for all collection subscriptions to prevent duplicates.
         private readonly Dictionary<INotifyCollectionChanged, IDisposable> _collectionSubscriptions = new Dictionary<INotifyCollectionChanged, IDisposable>();
+
+        // lighter reentrancy protection for Attach operations using weak references (does not keep objects alive)
+        private readonly ConditionalWeakTable<object, object> _attaching = new ConditionalWeakTable<object, object>();
+
         private bool _isApplying;
+
+        // reentrancy protection for state notifications
+        private bool _isNotifying;
+        private bool _pendingNotification;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UndoRedoService"/> class.
@@ -317,7 +328,46 @@ namespace Fast.UndoRedo.Core
         /// <param name="obj">The object to attach for tracking.</param>
         public void Attach(object obj)
         {
-            _tracker.Register(obj);
+            if (obj == null)
+            {
+                return;
+            }
+
+            // prevent recursive attach of the same instance using a weak table to avoid keeping strong references
+            var alreadyAttaching = false;
+            lock (_sync)
+            {
+                alreadyAttaching = _attaching.TryGetValue(obj, out _);
+                if (!alreadyAttaching)
+                {
+                    _attaching.Add(obj, DummyObject);
+                }
+            }
+
+            if (alreadyAttaching)
+            {
+                return;
+            }
+
+            try
+            {
+                _tracker.Register(obj);
+            }
+            finally
+            {
+                lock (_sync)
+                {
+                    // ConditionalWeakTable.Remove returns bool in newer frameworks; use Remove to drop entry
+                    try
+                    {
+                        _attaching.Remove(obj);
+                    }
+                    catch
+                    {
+                        // ignore
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -335,7 +385,44 @@ namespace Fast.UndoRedo.Core
         /// <param name="collection">The collection to attach.</param>
         public void AttachCollection(INotifyCollectionChanged collection)
         {
-            AttachCollectionInternal(collection, null);
+            if (collection == null)
+            {
+                return;
+            }
+
+            var alreadyAttaching = false;
+            lock (_sync)
+            {
+                alreadyAttaching = _attaching.TryGetValue(collection, out _);
+                if (!alreadyAttaching)
+                {
+                    _attaching.Add(collection, DummyObject);
+                }
+            }
+
+            if (alreadyAttaching)
+            {
+                return;
+            }
+
+            try
+            {
+                AttachCollectionInternal(collection, null);
+            }
+            finally
+            {
+                lock (_sync)
+                {
+                    try
+                    {
+                        _attaching.Remove(collection);
+                    }
+                    catch
+                    {
+                        // ignore
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -458,31 +545,80 @@ namespace Fast.UndoRedo.Core
 
         private void NotifyStateChanged()
         {
-            var state = new UndoRedoState
-            {
-                CanUndo = CanUndo,
-                CanRedo = CanRedo,
-                TopRedoDescription = TopRedoDescription,
-                TopUndoDescription = TopUndoDescription,
-            };
-
-            StateChanged?.Invoke(this, state);
-
-            List<IObserver<UndoRedoState>> copy;
+            // Prevent reentrant notifications from causing nested loops or stack overflows.
             lock (_sync)
             {
-                copy = _observers.ToList();
+                if (_isNotifying)
+                {
+                    _pendingNotification = true;
+                    return;
+                }
+
+                _isNotifying = true;
+                _pendingNotification = false;
             }
 
-            foreach (var o in copy)
+            try
             {
-                try
+                // Loop to flush any pending notifications that occurred while notifying observers.
+                while (true)
                 {
-                    o.OnNext(state);
+                    var state = new UndoRedoState
+                    {
+                        CanUndo = CanUndo,
+                        CanRedo = CanRedo,
+                        TopRedoDescription = TopRedoDescription,
+                        TopUndoDescription = TopUndoDescription,
+                    };
+
+                    try
+                    {
+                        StateChanged?.Invoke(this, state);
+                    }
+                    catch
+                    {
+                        // ignore event handler exceptions
+                    }
+
+                    List<IObserver<UndoRedoState>> copy;
+                    lock (_sync)
+                    {
+                        copy = _observers.ToList();
+                    }
+
+                    foreach (var o in copy)
+                    {
+                        try
+                        {
+                            o.OnNext(state);
+                        }
+                        catch
+                        {
+                            // ignore observer exceptions
+                        }
+                    }
+
+                    lock (_sync)
+                    {
+                        if (_pendingNotification)
+                        {
+                            // clear the flag and loop again to emit the latest state
+                            _pendingNotification = false;
+                            continue;
+                        }
+
+                        _isNotifying = false;
+                        break;
+                    }
                 }
-                catch
+            }
+            finally
+            {
+                // ensure flag cleared in case of unexpected exceptions
+                lock (_sync)
                 {
-                    // ignore observer exceptions
+                    _isNotifying = false;
+                    _pendingNotification = false;
                 }
             }
         }
