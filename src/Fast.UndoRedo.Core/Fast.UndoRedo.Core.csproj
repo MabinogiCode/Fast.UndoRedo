@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <RootNamespace>Fast.UndoRedo.Core</RootNamespace>
@@ -19,6 +19,7 @@
     <DocumentationFile>$(AssemblyName).xml</DocumentationFile>
     <PackageIcon>mabinogi-icon.png</PackageIcon>
     <PackageId>Fast.UndoRedo</PackageId>
+    <Title>FastUndoRedo</Title>
   </PropertyGroup>
   <ItemGroup>
     <None Include="nuget-readme.md" Pack="true" PackagePath="" />
