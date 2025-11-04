@@ -138,7 +138,7 @@ namespace Fast.UndoRedo.Core
         /// Pushes an undoable action onto the stack. Actions pushed while the service is applying are ignored.
         /// </summary>
         /// <param name="action">The action to record.</param>
-        public void Push(IUndoableAction action)
+        public virtual void Push(IUndoableAction action)
         {
             if (action == null)
             {
@@ -245,7 +245,7 @@ namespace Fast.UndoRedo.Core
         /// <summary>
         /// Undoes the most recent action, if any.
         /// </summary>
-        public void Undo()
+        public virtual void Undo()
         {
             IUndoableAction act = null;
             lock (_sync)
@@ -278,7 +278,7 @@ namespace Fast.UndoRedo.Core
         /// <summary>
         /// Redoes the most recently undone action, if any.
         /// </summary>
-        public void Redo()
+        public virtual void Redo()
         {
             IUndoableAction act = null;
             lock (_sync)

@@ -1,39 +1,90 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Fast.UndoRedo.Core.Logging;
 
 namespace Fast.UndoRedo.Core.Tests
 {
     /// <summary>
-    /// Simple test logger implementation used by unit tests to capture log calls.
+    /// Test logger that captures log messages for verification in tests.
     /// </summary>
-    public sealed class TestCoreLogger : ICoreLogger
+    internal class TestCoreLogger : ICoreLogger
     {
-        /// <summary>
-        /// Last message received by the logger.
-        /// </summary>
-        public string LastMessage { get; private set; }
+        private readonly List<string> _messages = new List<string>();
+        private readonly List<Exception> _exceptions = new List<Exception>();
 
         /// <summary>
-        /// Last exception received by the logger.
+        /// Gets the list of logged messages.
         /// </summary>
-        public Exception LastException { get; private set; }
+        public IReadOnlyList<string> Messages => _messages;
 
         /// <summary>
-        /// Records a message.
+        /// Gets the list of logged exceptions.
         /// </summary>
-        /// <param name="message">The message to record.</param>
+        public IReadOnlyList<Exception> Exceptions => _exceptions;
+
+        /// <summary>
+        /// Gets the last logged message, or null if no messages have been logged.
+        /// </summary>
+        public string LastMessage => _messages.LastOrDefault();
+
+        /// <summary>
+        /// Gets the last logged exception, or null if no exceptions have been logged.
+        /// </summary>
+        public Exception LastException => _exceptions.LastOrDefault();
+
+        /// <summary>
+        /// Logs a message.
+        /// </summary>
+        /// <param name="message">The message to log.</param>
         public void Log(string message)
         {
-            LastMessage = message;
+            _messages.Add(message);
         }
 
         /// <summary>
-        /// Records an exception.
+        /// Logs an exception.
         /// </summary>
-        /// <param name="ex">The exception to record.</param>
+        /// <param name="ex">The exception to log.</param>
         public void LogException(Exception ex)
         {
-            LastException = ex;
+            _exceptions.Add(ex);
+        }
+
+        /// <summary>
+        /// Logs a warning message.
+        /// </summary>
+        /// <param name="message">The warning message to log.</param>
+        public void LogWarning(string message)
+        {
+            _messages.Add($"WARNING: {message}");
+        }
+
+        /// <summary>
+        /// Logs an error message.
+        /// </summary>
+        /// <param name="message">The error message to log.</param>
+        public void LogError(string message)
+        {
+            _messages.Add($"ERROR: {message}");
+        }
+
+        /// <summary>
+        /// Logs a debug message.
+        /// </summary>
+        /// <param name="message">The debug message to log.</param>
+        public void LogDebug(string message)
+        {
+            _messages.Add($"DEBUG: {message}");
+        }
+
+        /// <summary>
+        /// Clears all logged messages and exceptions.
+        /// </summary>
+        public void Clear()
+        {
+            _messages.Clear();
+            _exceptions.Clear();
         }
     }
 }

@@ -881,30 +881,63 @@
         </member>
         <member name="T:Fast.UndoRedo.Core.Tests.TestCoreLogger">
             <summary>
-            Simple test logger implementation used by unit tests to capture log calls.
+            Test logger that captures log messages for verification in tests.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.Tests.TestCoreLogger.Messages">
+            <summary>
+            Gets the list of logged messages.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.Tests.TestCoreLogger.Exceptions">
+            <summary>
+            Gets the list of logged exceptions.
             </summary>
         </member>
         <member name="P:Fast.UndoRedo.Core.Tests.TestCoreLogger.LastMessage">
             <summary>
-            Last message received by the logger.
+            Gets the last logged message, or null if no messages have been logged.
             </summary>
         </member>
         <member name="P:Fast.UndoRedo.Core.Tests.TestCoreLogger.LastException">
             <summary>
-            Last exception received by the logger.
+            Gets the last logged exception, or null if no exceptions have been logged.
             </summary>
         </member>
         <member name="M:Fast.UndoRedo.Core.Tests.TestCoreLogger.Log(System.String)">
             <summary>
-            Records a message.
+            Logs a message.
             </summary>
-            <param name="message">The message to record.</param>
+            <param name="message">The message to log.</param>
         </member>
         <member name="M:Fast.UndoRedo.Core.Tests.TestCoreLogger.LogException(System.Exception)">
             <summary>
-            Records an exception.
+            Logs an exception.
             </summary>
-            <param name="ex">The exception to record.</param>
+            <param name="ex">The exception to log.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.TestCoreLogger.LogWarning(System.String)">
+            <summary>
+            Logs a warning message.
+            </summary>
+            <param name="message">The warning message to log.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.TestCoreLogger.LogError(System.String)">
+            <summary>
+            Logs an error message.
+            </summary>
+            <param name="message">The error message to log.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.TestCoreLogger.LogDebug(System.String)">
+            <summary>
+            Logs a debug message.
+            </summary>
+            <param name="message">The debug message to log.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Tests.TestCoreLogger.Clear">
+            <summary>
+            Clears all logged messages and exceptions.
+            </summary>
         </member>
         <member name="T:Fast.UndoRedo.Core.Tests.TestEnum">
             <summary>
