@@ -39,11 +39,17 @@
         /// <summary>
         /// Undoes the property change.
         /// </summary>
-        public void Undo() => this.setter(this.target, this.oldValue);
+        public void Undo()
+        {
+            this.setter(this.target, this.oldValue);
+        }
 
         /// <summary>
         /// Redoes the property change.
         /// </summary>
-        public void Redo() => this.setter(this.target, this.newValue);
+        public void Redo()
+        {
+            this.setter(this.target, this.newValue);
+        }
     }
 }

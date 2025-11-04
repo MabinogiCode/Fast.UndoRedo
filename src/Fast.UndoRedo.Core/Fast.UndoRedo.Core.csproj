@@ -40,4 +40,8 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Performance\" />
+    <Folder Include="Validation\" />
+  </ItemGroup>
 </Project>

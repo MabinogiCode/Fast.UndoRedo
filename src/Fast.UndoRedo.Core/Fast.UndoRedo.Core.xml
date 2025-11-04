@@ -278,9 +278,69 @@
             Dispose and invoke the wrapped action once.
             </summary>
         </member>
+        <member name="T:Fast.UndoRedo.Core.FastUndoConfigurationAttribute">
+            <summary>
+            Options for configuring undo/redo behavior at the class level.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.FastUndoConfigurationAttribute.AutoRegisterNestedObjects">
+            <summary>
+            Gets or sets whether to automatically register nested objects found in properties.
+            Default is true.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.FastUndoConfigurationAttribute.TrackCollections">
+            <summary>
+            Gets or sets whether to track changes to collection properties.
+            Default is true.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.FastUndoConfigurationAttribute.MaxRecursionDepth">
+            <summary>
+            Gets or sets the maximum depth for recursive registration to prevent infinite loops.
+            Default is 10.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.FastUndoConfigurationAttribute.UseAggressiveCaching">
+            <summary>
+            Gets or sets whether to use aggressive caching for property getters/setters.
+            This can improve performance but uses more memory.
+            Default is false.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.FastUndoConfigurationAttribute.IgnorePropertiesWithExceptions">
+            <summary>
+            Gets or sets whether to ignore properties that throw exceptions during evaluation.
+            Default is true.
+            </summary>
+        </member>
         <member name="T:Fast.UndoRedo.Core.FastUndoIgnoreAttribute">
             <summary>
             Attribute to mark properties or classes that should be ignored by the undo/redo system.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.FastUndoIgnoreAttribute.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fast.UndoRedo.Core.FastUndoIgnoreAttribute"/> class.
+            </summary>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.FastUndoIgnoreAttribute.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Fast.UndoRedo.Core.FastUndoIgnoreAttribute"/> class with a reason.
+            </summary>
+            <param name="reason">The reason for ignoring this member.</param>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.FastUndoIgnoreAttribute.Reason">
+            <summary>
+            Gets or sets the reason why this member should be ignored by undo/redo tracking.
+            This is useful for documentation and debugging purposes.
+            </summary>
+        </member>
+        <member name="P:Fast.UndoRedo.Core.FastUndoIgnoreAttribute.OnlyIgnoreInRecursiveRegistration">
+            <summary>
+            Gets or sets whether to ignore this property only during recursive registration.
+            If true, the property will be ignored when registering nested objects but can still
+            be tracked if explicitly attached to the service.
             </summary>
         </member>
         <member name="T:Fast.UndoRedo.Core.IUndoableAction">
@@ -321,6 +381,24 @@
             </summary>
             <param name="ex">The exception to log.</param>
         </member>
+        <member name="M:Fast.UndoRedo.Core.Logging.DebugCoreLogger.LogWarning(System.String)">
+            <summary>
+            Logs a warning message to the debug output.
+            </summary>
+            <param name="message">The warning message to log.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Logging.DebugCoreLogger.LogError(System.String)">
+            <summary>
+            Logs an error message to the debug output.
+            </summary>
+            <param name="message">The error message to log.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Logging.DebugCoreLogger.LogDebug(System.String)">
+            <summary>
+            Logs a debug message to the debug output.
+            </summary>
+            <param name="message">The debug message to log.</param>
+        </member>
         <member name="T:Fast.UndoRedo.Core.Logging.ICoreLogger">
             <summary>
             Interface for logging messages and exceptions in the undo/redo core system.
@@ -337,6 +415,24 @@
             Logs an exception.
             </summary>
             <param name="ex">The exception to log.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Logging.ICoreLogger.LogWarning(System.String)">
+            <summary>
+            Logs a warning message.
+            </summary>
+            <param name="message">The warning message to log.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Logging.ICoreLogger.LogError(System.String)">
+            <summary>
+            Logs an error message.
+            </summary>
+            <param name="message">The error message to log.</param>
+        </member>
+        <member name="M:Fast.UndoRedo.Core.Logging.ICoreLogger.LogDebug(System.String)">
+            <summary>
+            Logs a debug message.
+            </summary>
+            <param name="message">The debug message to log.</param>
         </member>
         <member name="T:Fast.UndoRedo.Core.Logging.LoggerExtensions">
             <summary>
@@ -454,11 +550,12 @@
             <param name="service">Service used to push undoable actions.</param>
             <param name="logger">Logger for error reporting.</param>
         </member>
-        <member name="M:Fast.UndoRedo.Core.RegistrationTracker.Register(System.Object)">
+        <member name="M:Fast.UndoRedo.Core.RegistrationTracker.Register(System.Object,System.Int32)">
             <summary>
             Register an object for property and collection change tracking.
             </summary>
             <param name="obj">Object to register.</param>
+            <param name="currentDepth">Current recursion depth to prevent infinite loops.</param>
         </member>
         <member name="M:Fast.UndoRedo.Core.RegistrationTracker.Unregister(System.Object)">
             <summary>
